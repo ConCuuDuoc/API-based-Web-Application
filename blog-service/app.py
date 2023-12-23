@@ -78,7 +78,7 @@ def upload_blog():
             else :
                 return jsonify(data=f"Unknow Error {result}"),442
 
-@app.route('/api/delete_blog', methods=['POST'])
+@app.route('/api/delete_blog', methods=['DELETE'])
 def delete_blog():
     request_data = request.get_json()
     id = request_data.get('id')
@@ -100,7 +100,7 @@ def delete_blog():
     else:
         return jsonify(data="Blog not found or could not be deleted"),404
 
-@app.route('/api/update_blog', methods=['POST'])
+@app.route('/api/update_blog', methods=['PUT'])
 def update_blog():
     try:
         json_req = request.get_json()
@@ -161,7 +161,7 @@ def update_blog():
         else:
             return jsonify(data="Blog could not be updated"),500
 
-@app.route('/api/get_blog_by_title', methods=['GET', 'POST'])
+@app.route('/api/get_blog_by_title', methods=['GET'])
 def get_blog_by_title():
     request_data = request.get_json()
     title = request_data.get('title')

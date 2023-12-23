@@ -64,7 +64,7 @@ def insert_product():
         return jsonify(data="Insert Product Success"),200
 
 
-@app.route('/api/delete_product', methods=['POST'])
+@app.route('/api/delete_product', methods=['DELETE'])
 def delete_product():
     request_data = request.get_json()
     id = request_data.get('id')
@@ -86,7 +86,7 @@ def delete_product():
     else:
         return jsonify(data="Product not found or could not be deleted"),404  
     
-@app.route('/api/update_product', methods=['POST'])
+@app.route('/api/update_product', methods=['PUT'])
 def update_product():
     try:
         json_req = request.get_json()
@@ -144,7 +144,7 @@ def update_product():
         else:
             return jsonify(data="Product could not be updated"),500
 
-@app.route('/api/get_product_by_title', methods=['GET', 'POST'])
+@app.route('/api/get_product_by_title', methods=['GET'])
 def get_product_by_title():
     request_data = request.get_json()
     title = request_data.get('title')
