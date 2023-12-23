@@ -177,7 +177,7 @@ def get_blog_by_title():
         "filter": filter_find
     })
     r_find = requests.post(action_find, headers=header, data=payload_find)
-    results_find = json.loads(r_find.text)['document']
+    results_find = json.loads(r_find.text)['documents']
 
     if not results_find:
         return jsonify(data="Blog not found"),404
@@ -185,9 +185,7 @@ def get_blog_by_title():
     blogs = []
     for result in results_find:
         blog_info = {
-            'id': result.get('id'),
             'title': result.get('title'),
-            'content': result.get('content'),
             'author': result.get('author')
         }
         blogs.append(blog_info)
