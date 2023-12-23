@@ -1,5 +1,7 @@
 authentication-service/.env
 authorization-serivce/.env
+product-service/.env
+blog-service/.env
 
 
 # Byte-compiled / optimized / DLL files
