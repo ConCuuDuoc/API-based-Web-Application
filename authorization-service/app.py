@@ -46,7 +46,13 @@ def before_request():
             session[key] = value
     else:
         # Create a new session
-        session_collection.insert_one({'session_id': session_id, 'data': {}, 'created_at': datetime.utcnow()})
+        expiration_time = datetime.utcnow() + timedelta(minutes=15)  # Set session lifetime
+        session_collection.insert_one({
+        'session_id': session_id,
+        'data': {},
+        'created_at': datetime.utcnow(),
+        'expires_at': expiration_time  # Add this line
+    })
 
     g.session_id = session_id  # Store session_id in g for later access
 
@@ -54,21 +60,18 @@ def before_request():
 def after_request(response):
     session_id = getattr(g, 'session_id', None)
     if session_id:
-        # Save session data
         session_data = {key: session[key] for key in session.keys()}
+        expiration_time = datetime.utcnow() + timedelta(minutes=15)  # Reset session lifetime
         session_collection.update_one(
-            {'session_id': session_id},
-            {'$set': {'data': session_data, 'updated_at': datetime.utcnow()}},
-            upsert=True
-        )
+        {'session_id': session_id},
+        {'$set': {'data': session_data, 'updated_at': datetime.utcnow(), 'expires_at': expiration_time}},
+        upsert=True
+    )
+    # Set session cookie
+        response.set_cookie('session_id', session_id, expires=expiration_time)  # Set the cookie expiration
+        return response
 
-        # Set session cookie
-        expiration = datetime.utcnow() + timedelta(minutes=15)  
-        response.set_cookie('session_id', session_id, expires=expiration)
-
-    return response
-
-@app.route("/authorize", methods=["POST"])
+@app.route("/api-autho/authorize", methods=["POST"])
 def authorize():
     # Retrieve access token from request
     token = request.headers.get("Authorization")

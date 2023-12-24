@@ -1,5 +1,4 @@
 import json
-from flask import JSONEncoder
 from flask import jsonify
 from flask import request, Flask, session
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -145,12 +144,10 @@ def login():
 
             token = generate_token(result['_id'])
             try:
-                response = requests.post(
+                requests.post(
                 AUTHO_SERVER_URL,
                 headers={'Authorization': f'{token}'}
                 )
-                if response.status_code !=200:
-                    raise Exception
             except Exception as error:
                 return jsonify({"error": f"Error login: {error}"}), 500
             return jsonify(data="Login Success", message=token), 200   
