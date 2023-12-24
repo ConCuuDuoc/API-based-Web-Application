@@ -149,7 +149,8 @@ def login():
                 AUTHO_SERVER_URL,
                 headers={'Authorization': f'{token}'}
                 )
-                print(response)
+                if response.status_code !=200:
+                    raise Exception
             except Exception as error:
                 return jsonify({"error": f"Error login: {error}"}), 500
             return jsonify(data="Login Success", message=token), 200   
