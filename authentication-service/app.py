@@ -1,6 +1,6 @@
 import json
 from flask import jsonify
-from flask import request, Flask
+from flask import request, Flask, session
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask import request
 import requests
@@ -15,22 +15,22 @@ import requests
 
 app = Flask(__name__)
 load_dotenv()  # take environment variables from .env.
-AUTH_SERVER_URL = "http://192.168.1.10:5013/authorize"
-secret_key = os.getenv('SECRET_KEY')
+AUTHO_SERVER_URL = os.getenv('AUTHO_SERVER')
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # Init MongoDB ============================
-mongodb_api = os.getenv('API_KEY')
-db_endpoint = os.getenv('DB_ENDPOINT')
+MONGODB_API = os.getenv('API_KEY')
+DB_ENDPOINT = os.getenv('DB_ENDPOINT')
 header = {
     'Content-Type': 'application/json',
     'Access-Control-Request-Headers':'*',
-    'api-key':mongodb_api
+    'api-key':MONGODB_API
 }
 # =========================================
 
 
 def isDuplicate(email : str):
-    action = db_endpoint + "findOne"
+    action = DB_ENDPOINT + "findOne"
     payload =json.dumps({
     "collection":"Data",
     "database":"Users",
@@ -44,24 +44,24 @@ def isDuplicate(email : str):
     else:
         return False
 
-def generate_token(id : str, expiration_minutes: int = 20):
+def generate_token(id : str, expiration_minutes: int = 15):
     expiration_time = datetime.utcnow() + timedelta(minutes=expiration_minutes)
     payload = {'id':id, 'exp':expiration_time}
     token = jwt.encode(
         payload=payload,
-        key = secret_key,
-        algorithm='HS256'
+        key = SECRET_KEY,
+        algorithm='ES256'
     )
     return token.decode()    
  
      
-@app.route('/signup', methods=['POST'])
+@app.route('/api-authen/signup', methods=['POST'])
 def signup():
 
     try:
         json_req = request.get_json()
     except Exception as ex:
-        return jsonify(message='Request Body incorrect json format: ' + str(ex), code=442)
+        return jsonify(message='Request Body incorrect json format: ' + str(ex)),442
 
     # Trim input body
     json_body = {}
@@ -82,9 +82,9 @@ def signup():
 
 
     if isDuplicate(email):
-        return jsonify(data="User Already Existed",code=442)
+        return jsonify(data="User Already Existed"),442
     else:
-        action = db_endpoint + "insertOne"
+        action = DB_ENDPOINT + "insertOne"
         payload =json.dumps({
         "collection":"Data",
         "database":"Users",
@@ -96,15 +96,15 @@ def signup():
         })
         r = requests.post(action,headers=header,data=payload)
         print(r.text)
-        return jsonify(data="Signup Success",code=200)
+        return jsonify(data="Signup Success"),200
 
 
-@app.route('/login', methods=['POST'])
+@app.route('/api-authen/login', methods=['POST'])
 def login():
     try:
         json_req = request.get_json()
     except Exception as ex:
-        return jsonify(message='Request Body incorrect json format: ' + str(ex), code=442)
+        return jsonify(message='Request Body incorrect json format: ' + str(ex)), 442
     # trim input body
     json_body = {}
     for key, value in json_req.items():
@@ -119,31 +119,33 @@ def login():
     email = json_body.get('email')
     password = json_body.get('password')
 
-    action = db_endpoint + "findOne"
+    action = DB_ENDPOINT + "findOne"
     payload =json.dumps({
     "collection":"Data",
     "database":"Users",
     "dataSource":"ATM",
     "filter": {"email": email}
     })
+
     r = requests.post(action,headers=header,data=payload)
     # print(r.text)
     result = json.loads(r.text)['document']
     
     if(result == None):
-        return jsonify(data="User not existed",code=442)
+        return jsonify(data="User not existed"),442
     else:
         if(not check_password_hash(pwhash=result['password'],password=password)):
-            return jsonify(data="Password Incorrect",code=403)
+            return jsonify(data="Password Incorrect"),403
         else:
+            #User is validated[]
+
             token = generate_token(result['_id'])
-            auth_server_response = requests.post(
-                AUTH_SERVER_URL,
+            requests.post(
+                AUTHO_SERVER_URL,
                 headers={'Authorization': f'{token}'}
             )
-            print(token)
-            return jsonify(data="Login Success", message=token, code=200)       
+            return jsonify(data="Login Success"), 200   
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5012,debug=True)
-    print(secret_key)
+    print(SECRET_KEY)
