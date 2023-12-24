@@ -1,10 +1,6 @@
-authentication-service/.env
-authorization-serivce/.env
-
 
 # Byte-compiled / optimized / DLL files
-authentication-service/__pycache__/
-authorization-serivce/__pycache__/
+
 __pycache__/
 *.py[cod]
 *$py.class
