@@ -1,4 +1,5 @@
 import json
+from flask import JSONEncoder
 from flask import jsonify
 from flask import request, Flask, session
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -14,9 +15,12 @@ import requests
 
 
 app = Flask(__name__)
+#Secret key for sign cookie
+app.secret_key = os.getenv('SECRET_KEY')
+
 load_dotenv()  # take environment variables from .env.
 AUTHO_SERVER_URL = os.getenv('AUTHO_SERVER')
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = str(os.getenv('SECRET_KEY'))
 
 # Init MongoDB ============================
 MONGODB_API = os.getenv('API_KEY')
@@ -52,7 +56,7 @@ def generate_token(id : str, expiration_minutes: int = 15):
         key = SECRET_KEY,
         algorithm='ES256'
     )
-    return token.decode()    
+    return token 
  
      
 @app.route('/api-authen/signup', methods=['POST'])
@@ -140,12 +144,15 @@ def login():
             #User is validated[]
 
             token = generate_token(result['_id'])
-            requests.post(
+            try:
+                response = requests.post(
                 AUTHO_SERVER_URL,
                 headers={'Authorization': f'{token}'}
-            )
-            return jsonify(data="Login Success"), 200   
+                )
+                print(response)
+            except Exception as error:
+                return jsonify({"error": f"Error login: {error}"}), 500
+            return jsonify(data="Login Success", message=token), 200   
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5012,debug=True)
-    print(SECRET_KEY)

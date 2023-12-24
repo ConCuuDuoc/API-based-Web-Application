@@ -31,14 +31,13 @@ def find_user(user_id: str):
     else:
         return False
 
-def add_user(user_id: str,role: str, scopes: list ):
+def add_user(user_id: str, scopes: list ):
     action = db_endpoint + "insertOne"
     payload =json.dumps({
         "collection": "Auth",
         "database": "Auth",
         "dataSource": "Cluster0",
         "document": {"uid": user_id,
-                    "role": role, 
                     "scopes": scopes}
     })
     r = requests.post(action,headers=header,data=payload)
@@ -77,10 +76,9 @@ def get_user_role_scope(user_id: str):
 
     # Extract user role and scopes from document
     try:
-        user_role = document["role"]
         user_scopes = document["scopes"]
     except KeyError as error:
         raise ValueError(f"Missing required fields in user document: {error}")
 
     # Return user role and scopes
-    return user_role, user_scopes
+    return  user_scopes
