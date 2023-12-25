@@ -56,6 +56,23 @@ def generate_token(id : str, expiration_minutes: int = 15):
         algorithm='ES256'
     )
     return token 
+
+# Validate session (Check if user is logged in or not)
+def is_user_logged_in():
+    session_id = request.cookies.get('session_id')
+    if not session_id:
+        return False
+    
+    # Assuming the authorization service exposes an endpoint to validate session IDs
+    auth_service_url = AUTHO_SERVER_URL+"/api-autho/validate-session"
+    response = requests.get(auth_service_url, params={'session_id': session_id})
+    
+    if response.status_code == 200:
+        # The authorization service confirms the session is valid
+        return True
+    else:
+        # The session is not valid or some other error occurred
+        return False
  
      
 @app.route('/api-authen/signup', methods=['POST'])
@@ -145,7 +162,7 @@ def login():
             token = generate_token(result['_id'])
             try:
                 response = requests.post(
-                AUTHO_SERVER_URL,
+                AUTHO_SERVER_URL+"/api-autho/authorize",
                 headers={'Authorization': f'{token}'}
                 )
                 if response.status_code !=200:
