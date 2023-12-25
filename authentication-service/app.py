@@ -144,10 +144,13 @@ def login():
 
             token = generate_token(result['_id'])
             try:
-                requests.post(
+                response = requests.post(
                 AUTHO_SERVER_URL,
                 headers={'Authorization': f'{token}'}
                 )
+                if response.status_code !=200:
+                    raise Exception("Error while set session!")
+                
             except Exception as error:
                 return jsonify({"error": f"Error login: {error}"}), 500
             return jsonify(data="Login Success", message=token), 200   
