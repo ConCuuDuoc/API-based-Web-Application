@@ -10,19 +10,19 @@ AUTHO_URL = os.getenv("AUTHO_URL")
 def submit_user(email,password):
     data = {"email":email,"password":password}
     req = requests.post(AUTHEN_URL+"signup",json=data)
-    respone = req.json()
-    status = respone['status']
+    response = req.json()
+    status = response['status']
     return status
 
 def validate_user(email, password):
     data = {"email":email,"password":password}
     req = requests.post(AUTHEN_URL+"login",json=data)
-    respone = req.json()
+    response = req.json()
     try:
-        message = respone['data']
-        mail = respone['email']
+        message = response['data']
+        mail = response['email']
         session_id = response['session_id']
-        return respone
+        return response
     except:
         return False
     
