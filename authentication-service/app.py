@@ -48,7 +48,7 @@ def isDuplicate(email : str):
     else:
         return False
 
-def generate_token(id : str, expiration_minutes: int = 15):
+def generate_token(id : str, expiration_minutes: int = 3):
     expiration_time = datetime.utcnow() + timedelta(minutes=expiration_minutes)
     payload = {'id':id, 'exp':expiration_time}
     token = jwt.encode(
@@ -187,7 +187,7 @@ def login():
                 
             except Exception as error:
                 return jsonify({"error": f"Error login: {error}"}), 500
-            return jsonify(data="Login Success", email=email), 200   
+            return jsonify(data="Login Success", email=email, exchange_token=token), 200   
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5012,debug=True)
