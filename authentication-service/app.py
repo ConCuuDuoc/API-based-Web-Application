@@ -58,11 +58,11 @@ def generate_token(id : str, expiration_minutes: int = 15):
     return token 
 
 # Validate session (Check if user is logged in or not)
+
 def is_user_logged_in():
     session_id = request.cookies.get('session_id')
     if not session_id:
         return False
-    
     # Assuming the authorization service exposes an endpoint to validate session IDs
     auth_service_url = AUTHO_SERVER_URL+"/api-autho/validate-session"
     response = requests.get(auth_service_url, params={'session_id': session_id})
@@ -74,7 +74,14 @@ def is_user_logged_in():
         # The session is not valid or some other error occurred
         return False
  
-     
+@app.route('/api-authen/validate-session')
+def check_session():
+    if not is_user_logged_in():
+        return jsonify({"error": "User is not logged in"}), 401
+    else:
+        # Proceed with the logic for a logged-in user
+        return jsonify({"message": "User is logged in"}), 200
+    
 @app.route('/api-authen/signup', methods=['POST'])
 def signup():
 
@@ -162,7 +169,7 @@ def login():
             token = generate_token(result['_id'])
             try:
                 response = requests.post(
-                AUTHO_SERVER_URL+"/api-autho/authorize",
+                AUTHO_SERVER_URL+"authorize",
                 headers={'Authorization': f'{token}'}
                 )
                 if response.status_code !=200:

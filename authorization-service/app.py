@@ -41,7 +41,7 @@ def before_request():
     session_record = session_collection.find_one({'session_id': session_id})
     if session_record:
         # Load session data
-        session_data = session_record.get('data', {})
+        session_data = session_record.get('data', {'session_id'})
         for key, value in session_data.items():
             session[key] = value
     else:
@@ -60,16 +60,35 @@ def before_request():
 def after_request(response):
     session_id = getattr(g, 'session_id', None)
     if session_id:
-        session_data = {key: session[key] for key in session.keys()}
-        expiration_time = datetime.utcnow() + timedelta(minutes=15)  # Reset session lifetime
-        session_collection.update_one(
-        {'session_id': session_id},
-        {'$set': {'data': session_data, 'updated_at': datetime.utcnow(), 'expires_at': expiration_time}},
+        session_data = session.get('access_token')
+        if session_data:
+            expiration_time = datetime.utcnow() + timedelta(minutes=15)  # Reset session lifetime
+            session_collection.update_one(
+            {'session_id': session_id},
+            {'$set': {'data': session_data, 'updated_at': datetime.utcnow(), 'expires_at': expiration_time}},
         upsert=True
-    )
+        )
     # Set session cookie
         response.set_cookie('session_id', session_id, expires=expiration_time)  # Set the cookie expiration
         return response
+
+@app.route('/api-autho/validate_session')
+def check_access_token(session_id):
+    if not session_id:
+        return False
+    # Query the MongoDB to find the session document with the given session_id
+    session_document = session_collection.find_one(
+        {
+            'session_id': session_id,
+            'expires_at': {'$gt': datetime.utcnow()}  # Check that the session hasn't expired
+        }
+    )
+    # If the document is found and has an access_token field, return True
+    if session_document and 'access_token' in session_document.get('data', {}):
+        return True
+    else:
+        # If the document or access_token doesn't exist, or the session has expired, return False
+        return False
 
 @app.route("/api-autho/authorize", methods=["POST"])
 def authorize():
