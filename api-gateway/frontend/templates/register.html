@@ -27,6 +27,27 @@
                 <input type="password" class="form-control" id="pwd" placeholder="Enter password" name="password">
                 </div>
 
+                <div class="form-group">
+                <label for="pwd">Retype Password:</label>
+                <input type="retype_password" class="form-control" id="pwd" placeholder="ReEnter password" name="retype_password">
+                </div>
+
+                {% if error %}
+						<div id="error-message" >
+							<p class="error">{{ error }}</p>
+						</div>
+					{% endif %}
+				{% if annouce %}
+						<div id="annouce-message" >
+							<p class="annouce">{{ annouce }}</p>
+						</div>
+						<script>
+							setTimeout(function(){
+								window.location.href="/login"; // The URL that will be redirected too.
+							}, 3000); // The bigger the number the longer the delay.
+						</script>
+				{% endif %}
+
                 <button type="submit" class="btn btn-dark">Submit</button>
                 <a href="/login" class="btn btn-primary">Login</a>
             </form>

@@ -54,10 +54,10 @@ def before_request():
         'expires_at': expiration_time  # Add this line
     })
 
-    g.session_id = session_id  # Store session_id in g for later access
+    request.set_cookie('session_id', session_id, expires=expiration_time)  # Store session_id in g for later access
 
 @app.after_request
-def after_request(response):
+def after_request():
     session_id = getattr(g, 'session_id', None)
     if session_id:
         session_data = session.get('access_token')
@@ -68,9 +68,7 @@ def after_request(response):
             {'$set': {'data': session_data, 'updated_at': datetime.utcnow(), 'expires_at': expiration_time}},
         upsert=True
         )
-    # Set session cookie
-        response.set_cookie('session_id', session_id, expires=expiration_time)  # Set the cookie expiration
-        return response
+    # Set session cookie to FE
 
 @app.route('/api-autho/validate_session')
 def check_access_token(session_id):
@@ -154,8 +152,9 @@ def authorize():
     if new_access_token:
         access_token = new_access_token
         set_token(access_token)
+        session_id = request.cookies.get('session_id')
 
-    return jsonify({"message": "Access token set in session"}),200
+    return jsonify({"message": "Access token set in session", "session_id":session_id}),200
 
 def set_token(access_token):
     session['access_token'] = access_token

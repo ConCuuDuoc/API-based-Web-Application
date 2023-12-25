@@ -142,6 +142,7 @@ def login():
         json_req = request.get_json()
     except Exception as ex:
         return jsonify(message='Request Body incorrect json format: ' + str(ex)), 442
+    
     # trim input body
     json_body = {}
     for key, value in json_req.items():

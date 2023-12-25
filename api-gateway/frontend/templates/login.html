@@ -24,6 +24,16 @@
                 <label for="pwd">Password:</label>
                 <input type="password" class="form-control" id="pwd" placeholder="Enter password" name="password">
                 </div>
+                {% if error %}
+						<div id="error-message" >
+							<p class="error">{{ error }}</p>
+						</div>
+				{% endif %}
+				{% if annouce %}
+						<div id="annouce-message" >
+							<p class="annouce">{{ annouce }}</p>
+						</div>
+				{% endif %}
 
                 <button type="submit" class="btn btn-dark">Submit</button>
                 <a href="/register" class="btn btn-primary">Register</a>
