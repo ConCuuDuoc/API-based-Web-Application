@@ -15,9 +15,10 @@ import requests
 
 app = Flask(__name__)
 #Secret key for sign cookie
+load_dotenv() 
 app.secret_key = os.getenv('SECRET_KEY')
 
-load_dotenv()  # take environment variables from .env.
+# take environment variables from .env.
 AUTHO_SERVER_URL = os.getenv('AUTHO_SERVER')
 SECRET_KEY = str(os.getenv('SECRET_KEY'))
 
@@ -63,7 +64,7 @@ def is_user_logged_in(session_id):
     if not session_id:
         return False
     # Assuming the authorization service exposes an endpoint to validate session IDs
-    auth_service_url = AUTHO_SERVER_URL+"/api-autho/validate-session"
+    auth_service_url = AUTHO_SERVER_URL+"validate-session"
     response = requests.get(auth_service_url, params={'session_id': session_id})
     
     if response.status_code == 200:

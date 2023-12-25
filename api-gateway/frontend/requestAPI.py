@@ -1,9 +1,11 @@
 import requests
 import os
+from dotenv import load_dotenv
 
 # config URL here
-AUTHEN_URL = f'http://{os.getenv("AUTHEN_URL")}'
-AUTHO_URL = f'http://{os.getenv("AUTHO_URL")}'
+load_dotenv()
+AUTHEN_URL = os.getenv("AUTHEN_URL")
+AUTHO_URL = os.getenv("AUTHO_URL")
 
 def submit_user(email,password):
     data = {"email":email,"password":password}
