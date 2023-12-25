@@ -59,8 +59,7 @@ def generate_token(id : str, expiration_minutes: int = 15):
 
 # Validate session (Check if user is logged in or not)
 
-def is_user_logged_in():
-    session_id = request.cookies.get('session_id')
+def is_user_logged_in(session_id):
     if not session_id:
         return False
     # Assuming the authorization service exposes an endpoint to validate session IDs
@@ -73,10 +72,20 @@ def is_user_logged_in():
     else:
         # The session is not valid or some other error occurred
         return False
- 
+    
+    
 @app.route('/api-authen/validate-session')
 def check_session():
-    if not is_user_logged_in():
+    # Extract the session_id cookie from the incoming request
+    session_id = request.cookies.get('session_id', None)
+    # Check if the session_id cookie was found
+    if session_id is None:
+        return jsonify({"error": "Session ID not found in cookies"}), 404
+    else:
+        # If the session_id cookie is not found, handle the absence accordingly
+        pass
+        
+    if not is_user_logged_in(session_id):
         return jsonify({"error": "User is not logged in"}), 401
     else:
         # Proceed with the logic for a logged-in user
