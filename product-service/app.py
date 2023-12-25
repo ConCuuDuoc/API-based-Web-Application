@@ -1,4 +1,6 @@
-import json, requests
+#!/usr/bin/env python3
+import json
+import requests
 from flask import jsonify, request, Flask
 from dotenv import load_dotenv
 import os
@@ -149,9 +151,9 @@ def get_product_by_title():
     request_data = request.get_json()
     title = request_data.get('title')
     if title is None:
-        return jsonify(data="Missing 'title' parameter in the request"),400
+        return jsonify(data="Missing 'title' parameter in the request"), 400
 
-    action_find = db_endpoint + "find"
+    action_find = db_endpoint + "findOne"
     filter_find = {"title": title}
     payload_find = json.dumps({
         "collection": "Products",
@@ -160,22 +162,36 @@ def get_product_by_title():
         "filter": filter_find
     })
     r_find = requests.post(action_find, headers=header, data=payload_find)
-    results_find = json.loads(r_find.text)['documents']
+    response_data = json.loads(r_find.text)
+    
+    if isinstance(response_data, str):
+        # Handle the case where the response is a string (error message, not a document)
+        return jsonify(data=response_data), 404
 
-    if not results_find:
-        return jsonify(data="Product not found"),404
+    result = response_data.get('document')
 
-    products = []
-    for result in results_find:
-        product_info = {
-            'id': result.get('id'),
-            'title': result.get('title'),
-            'price': result.get('price')
-        }
-        products.append(product_info)
+    if not result:
+        return jsonify(data="Product not found"), 404
 
-    return jsonify(data=products),200
+    # If 'document' is a list, iterate over it
+    if isinstance(result, list):
+        products = []
+        for doc in result:
+            product_info = {
+                'id': doc.get('id'),
+                'title': doc.get('title'),
+                'price': doc.get('price')
+            }
+            products.append(product_info)
+        return jsonify(data=products), 200
 
+    # If 'document' is a single dictionary
+    product_info = {
+        'id': result.get('id'),
+        'title': result.get('title'),
+        'price': result.get('price')
+    }
+    return jsonify(data=product_info), 200
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8888, debug=True)
+    app.run(host='0.0.0.0', port=8888)

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{url_for('static', filename='styles/blog.css') }}">
+    <title>Blog Page</title>
+</head>
+<body>
+    <h1>Welcome to the Blog Page</h1>
+
+    <!-- Upload Blog Form -->
+    <h2>Upload Blog</h2>
+    <form id="uploadForm">
+        <label for="id">ID:</label>
+        <input type="text" name="id" required><br>
+        <label for="title">Title:</label>
+        <input type="text" name="title" required><br>
+        <label for="content">Content:</label>
+        <textarea name="content" required></textarea><br>
+        <label for="author">Author:</label>
+        <input type="text" name="author" required><br>
+        <button type="submit">Upload Blog</button>
+    </form>
+
+    <!-- Delete Blog Form -->
+    <h2>Delete Blog</h2>
+    <form id="deleteForm">
+        <label for="deleteId">ID:</label>
+        <input type="text" name="deleteId" required><br>
+        <button type="submit">Delete Blog</button>
+    </form>
+
+    <!-- Update Blog Form -->
+    <h2>Update Blog</h2>
+    <form id="updateForm">
+        <label for="updateId">ID:</label>
+        <input type="text" name="updateId" required><br>
+        <label for="updateTitle">Title:</label>
+        <input type="text" name="updateTitle"><br>
+        <label for="updateContent">Content:</label>
+        <textarea name="updateContent"></textarea><br>
+        <label for="updateAuthor">Author:</label>
+        <input type="text" name="updateAuthor"><br>
+        <button type="submit">Update Blog</button>
+    </form>
+
+    <!-- Get Blog by Title Form -->
+    <h2>Get Blog by Title</h2>
+    <form id="getByTitleForm">
+        <label for="getByTitle">Title:</label>
+        <input type="text" name="getByTitle" required><br>
+        <button type="submit">Get Blogs by Title</button>
+    </form>
+
+    <!-- Display Results -->
+    <h2>Results</h2>
+    <div id="results"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle form submissions
+            document.getElementById('uploadForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                // Handle the upload logic using JavaScript fetch or XMLHttpRequest
+                // Display results in the "results" div
+            });
+
+            document.getElementById('deleteForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                // Handle the delete logic using JavaScript fetch or XMLHttpRequest
+                // Display results in the "results" div
+            });
+
+            document.getElementById('updateForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                // Handle the update logic using JavaScript fetch or XMLHttpRequest
+                // Display results in the "results" div
+            });
+
+            document.getElementById('getByTitleForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                // Handle the get by title logic using JavaScript fetch or XMLHttpRequest
+                // Display results in the "results" div
+            });
+        });
+    </script>
+</body>
+</html>
