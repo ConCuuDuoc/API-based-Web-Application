@@ -4,8 +4,8 @@ import os
 import json
 import requests
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
-load_dotenv(dotenv_path)  # take environment variables from .env.
+
+load_dotenv()  # take environment variables from .env.
 
 mongodb_api = os.getenv('API_KEY')
 api = Blueprint('author', __name__)

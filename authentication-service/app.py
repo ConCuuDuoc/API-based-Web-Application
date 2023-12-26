@@ -48,7 +48,7 @@ def isDuplicate(email : str):
     else:
         return False
 
-def generate_token(id : str, expiration_minutes: int = 3):
+def generate_token(id : str, expiration_minutes: int = 15):
     expiration_time = datetime.utcnow() + timedelta(minutes=expiration_minutes)
     payload = {'id':id, 'exp':expiration_time}
     token = jwt.encode(
@@ -69,10 +69,11 @@ def is_user_logged_in(session_id):
     
     if response.status_code == 200:
         # The authorization service confirms the session is valid
-        return True
+         return jsonify({"message": "User have logged in"}), 200
     else:
-        # The session is not valid or some other error occurred
-        return False
+        # If the document or access_token doesn't exist, or the session has expired, return False
+        return jsonify({"message": "User not yet logged in"}), 404
+
     
     
 @app.route('/api-authen/validate-session')
@@ -185,10 +186,11 @@ def login():
                 )
                 if response.status_code !=200:
                     raise Exception("Error while set session!")
-                
+                #session_id =  response['session_id']
+                #session_id=session_id
             except Exception as error:
                 return jsonify({"error": f"Error login: {error}"}), 500
-            return jsonify(data="Login Success", email=email, session_id=response['session_id']), 200   
+            return jsonify(data="Login Success", email=email), 200   
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5012)

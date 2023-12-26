@@ -4,14 +4,14 @@ from pymongo import MongoClient
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from bson.objectid import ObjectId
+from pymongo.server_api import ServerApi
 
 import os
 import base64
 import jwt
 import json
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
-load_dotenv(dotenv_path)  # take environment variables from .env.
+load_dotenv()  # take environment variables from .env.
 
 PUBLIC_KEY = str(os.getenv("PUBLIC_KEY"))
 SECRET_KEY = str(os.getenv('SECRET_KEY'))
@@ -23,9 +23,13 @@ app.config['PROPAGATE_EXCEPTIONS'] = True
 app.secret_key = SECRET_KEY
 
 # Init MongoDB ============================
-client = MongoClient(os.getenv("SESSION_HOST"), 27017)
-db = client['SessionStorage']
-session_collection = db['access-sessions']
+try:
+    client = MongoClient(os.getenv("SESSION_HOST"), server_api=ServerApi('1'))
+    db = client['SessionStorage']
+    session_collection = db['access-sessions']
+
+except Exception as error:
+    print("error:" f"Error login: {error}")
 # =========================================
 # Set up for session=======================
 def generate_session_id():
@@ -41,7 +45,7 @@ def before_request():
     session_record = session_collection.find_one({'session_id': session_id})
     if session_record:
         # Load session data
-        session_data = session_record.get('data', {'session_id'})
+        session_data = session_record.get('data', {})
         for key, value in session_data.items():
             session[key] = value
     else:
@@ -54,24 +58,34 @@ def before_request():
         'expires_at': expiration_time  # Add this line
     })
 
-    request.set_cookie('session_id', session_id, expires=expiration_time)  # Store session_id in g for later access
+    g.session_id = session_id  # Store session_id in g for later access
 
 @app.after_request
-def after_request():
+def after_request(response):
     session_id = getattr(g, 'session_id', None)
     if session_id:
-        session_data = session.get('access_token')
-        if session_data:
+        # Retrieve only 'access-token' key from the session if it exists
+        access_token = session.get('access_token')
+        # Check if 'access_token' is in the session before trying to update
+        if access_token:
             expiration_time = datetime.utcnow() + timedelta(minutes=15)  # Reset session lifetime
             session_collection.update_one(
-            {'session_id': session_id},
-            {'$set': {'data': session_data, 'updated_at': datetime.utcnow(), 'expires_at': expiration_time}},
-        upsert=True
-        )
-    # Set session cookie to FE
+                {'session_id': session_id},
+                {'$set': {
+                    'data.access_token': access_token,
+                    'updated_at': datetime.utcnow(),
+                    'expires_at': expiration_time
+                }},
+                upsert=True
+            )
+            # Set session cookie for 'session_id'
+            response.set_cookie('session_id', session_id, expires=expiration_time)
 
-@app.route('/api-autho/validate_session')
-def check_access_token(session_id):
+    return response
+
+@app.route('/api-autho/validate_session',methods=["POST"])
+def validate_session():
+    session_id=request.args.get('session_id')
     if not session_id:
         return False
     # Query the MongoDB to find the session document with the given session_id
@@ -83,10 +97,10 @@ def check_access_token(session_id):
     )
     # If the document is found and has an access_token field, return True
     if session_document and 'access_token' in session_document.get('data', {}):
-        return True
+        return jsonify({"message": "User have logged in"}), 200
     else:
         # If the document or access_token doesn't exist, or the session has expired, return False
-        return False
+        return jsonify({"message": "User not yet logged in"}), 404
 
 @app.route("/api-autho/authorize", methods=["POST"])
 def authorize():
@@ -115,9 +129,7 @@ def authorize():
     scopes=['read','post','delete', user_id]
 
     #up post do thang user -> post phai cho quyen [read, user_id_1]
-
     # Check if requested scope is included in user scope
-
     try:
         payload['scope']
         return jsonify({"error": "Insufficient access rights"}), 401
@@ -138,7 +150,6 @@ def authorize():
     if  user_scopes is None:
         return jsonify({"error": "User not found or invalid"}), 403
 
-    
     # Generate new access token with updated scope if necessary
     new_access_token = None
     new_token_payload = {
@@ -152,10 +163,16 @@ def authorize():
     if new_access_token:
         access_token = new_access_token
         set_token(access_token)
-        session_id = request.cookies.get('session_id')
-
-    return jsonify({"message": "Access token set in session", "session_id":session_id}),200
-
+        session_id = session['session_id'] 
+        if session_id:
+            # Return the session_id only if it exists
+            return jsonify({"message": "Access token set in session", "session_id": session_id}), 200
+        else:
+            # Handle the case where the session_id is not found
+            return jsonify({"error": "Session ID not found"}), 400
+    else:
+        # Handle the case where the access token was not generated
+        return jsonify({"error": "Failed to generate access token"}), 500
 def set_token(access_token):
     session['access_token'] = access_token
     return 
