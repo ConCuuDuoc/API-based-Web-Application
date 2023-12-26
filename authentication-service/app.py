@@ -188,7 +188,7 @@ def login():
                 
             except Exception as error:
                 return jsonify({"error": f"Error login: {error}"}), 500
-            return jsonify(data="Login Success", email=email, exchange_token=token), 200   
+            return jsonify(data="Login Success", email=email, session_id=response['session_id']), 200   
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5012)

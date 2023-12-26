@@ -74,7 +74,7 @@ def register():
 # Route for the root URL ("/")
 @app.route('/', methods=['GET'])
 def main_page():
-    return render_template('index.html', title="Jelwery")# Route for /products/
+    return render_template('index.html', title="NetSec")
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0")
