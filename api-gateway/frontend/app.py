@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 import os
 import requests
 from json import dumps, loads, dump
-from requestAPI import validate_user,submit_user,is_logged_in,delete_session
+from requestAPI import validate_user,submit_user,is_logged_in,delete_session,blog_up
 
 load_dotenv()
 app = Flask(__name__)
@@ -63,6 +63,14 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    # Retrieve cookies from the incoming request
+    try:
+        cookies = request.cookies
+        token_encoded = cookies.get('session_id')
+        if is_logged_in(token_encoded):
+            return redirect(url_for('get_dashboard'))
+    except:
+        pass
     # Handle the POST request when the register form is submitted
     if request.method == 'POST':
         # Extract form data
@@ -118,6 +126,41 @@ def logout():
 #@is_logged_in
 def main_page():
     return render_template('index.html', title="NetSec")
+
+@app.route('/blog', methods=['GET'])
+#@is_logged_in
+def blog_page():
+    
+    try:
+        is_logged = is_logged_in(request.cookies.get('session_id'))
+        app.logger.info(f'ISLOGGED: {is_logged}')
+        if is_logged:
+            return render_template('blog.html', title="NetSec")
+        else:
+            raise Exception
+    except Exception as e:
+        app.logger.error(f"Other Error:{e}")
+        return redirect(url_for('login'))
+    
+@app.route('/upload-blog', methods=['POST'])
+#@is_logged_in
+def post_upload_blog():
+    try:
+        is_logged = is_logged_in(request.cookies.get('session_id'))
+        app.logger.info(f'ISLOGGED: {is_logged}')
+        if is_logged:
+            blog_id = request.form.get('id')
+            title = request.form.get('title')
+            content = request.form.get('content')
+            author = request.form.get('author')
+            app.logger.warning(f"{blog_id},{title},{content},{author}")
+            check_response = blog_up(blog_id,title,content,author)
+        else:
+            raise Exception
+    except Exception as e:
+        app.logger.error(f"Other Error:{e}")
+        return redirect(url_for('blog_page'))
+    
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0",debug=True)

@@ -5,14 +5,19 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{url_for('static', filename='styles/blog.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
     <title>Blog Page</title>
 </head>
 <body>
     <h1>Welcome to the Blog Page</h1>
+    <a href="/logout" class="btn btn-dark">Logout</a>
 
     <!-- Upload Blog Form -->
     <h2>Upload Blog</h2>
-    <form id="uploadForm">
+    <form id="uploadForm" action="/upload-blog" method="POST" >
         <label for="id">ID:</label>
         <input type="text" name="id" required><br>
         <label for="title">Title:</label>
@@ -26,7 +31,7 @@
 
     <!-- Delete Blog Form -->
     <h2>Delete Blog</h2>
-    <form id="deleteForm">
+    <form id="deleteForm" action="/delete-blog" method="POST" >
         <label for="deleteId">ID:</label>
         <input type="text" name="deleteId" required><br>
         <button type="submit">Delete Blog</button>
@@ -34,7 +39,7 @@
 
     <!-- Update Blog Form -->
     <h2>Update Blog</h2>
-    <form id="updateForm">
+    <form id="updateForm" action="/update-blog" method="POST" >
         <label for="updateId">ID:</label>
         <input type="text" name="updateId" required><br>
         <label for="updateTitle">Title:</label>
@@ -48,7 +53,7 @@
 
     <!-- Get Blog by Title Form -->
     <h2>Get Blog by Title</h2>
-    <form id="getByTitleForm">
+    <form id="getByTitleForm" action="/read-blog" method="POST" >
         <label for="getByTitle">Title:</label>
         <input type="text" name="getByTitle" required><br>
         <button type="submit">Get Blogs by Title</button>
@@ -59,32 +64,7 @@
     <div id="results"></div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Handle form submissions
-            document.getElementById('uploadForm').addEventListener('submit', function(event) {
-                event.preventDefault();
-                // Handle the upload logic using JavaScript fetch or XMLHttpRequest
-                // Display results in the "results" div
-            });
-
-            document.getElementById('deleteForm').addEventListener('submit', function(event) {
-                event.preventDefault();
-                // Handle the delete logic using JavaScript fetch or XMLHttpRequest
-                // Display results in the "results" div
-            });
-
-            document.getElementById('updateForm').addEventListener('submit', function(event) {
-                event.preventDefault();
-                // Handle the update logic using JavaScript fetch or XMLHttpRequest
-                // Display results in the "results" div
-            });
-
-            document.getElementById('getByTitleForm').addEventListener('submit', function(event) {
-                event.preventDefault();
-                // Handle the get by title logic using JavaScript fetch or XMLHttpRequest
-                // Display results in the "results" div
-            });
-        });
+        
     </script>
 </body>
 </html>

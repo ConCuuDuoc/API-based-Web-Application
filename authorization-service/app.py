@@ -130,6 +130,49 @@ def delete_session():
         # If the document or access_token doesn't exist, or the session has expired, return False
         return jsonify({"info": "No session found with session_id"}), 403
 
+@app.route("/api-validate/get-scope", methods=["POST"])
+def get_scope():
+    # Retrieve access token from request
+    #access_token = session_document.get('data', {}).get('access_token')
+    session_id = request.cookies.get('session_id')
+    if session_id == None:
+        return jsonify({"info": "Missing authorization token"}), 401
+    
+    session_document = session_collection.find_one(
+        {
+            'session_id': session_id,
+            'expires_at': {'$gt': datetime.utcnow()}  # Check that the session hasn't expired
+        }
+    )
+    # If the document is found and has an access_token field, return True
+    if session_document:
+        access_token = session_document.get('data', {}).get('access_token')
+        if not access_token:
+            return jsonify({"error": "Access token not found"}), 404
+    else:
+        return jsonify({"error": "Session not found or expired"}), 404
+    
+    try:
+        # Decode access token
+        payload = jwt.decode(access_token, PUBLIC_KEY, algorithms=["ES256"])
+
+    except jwt.exceptions.InvalidTokenError as error:
+        return jsonify({"info": f"Invalid access token: {error}"}), 401  
+    except jwt.exceptions.InvalidSignatureError as error:
+        return jsonify({"info": f"Invalid access token: {error}"}), 401 
+    except jwt.exceptions.ExpiredSignatureError as error:
+        return jsonify({"info": f"Invalid access token: {error}"}), 401
+    except jwt.exceptions.InvalidIssuerError as error:
+        return jsonify({"info": f"Invalid access token: {error}"}), 401
+    except jwt.PyJWTError as error:
+        return jsonify({"info": f"{error}"}), 401
+    
+    # Extract user ID    
+    user_id = payload['sub']
+    scopes = payload['scopes']
+
+    return jsonify({"info": "Access token set in session", "access_token": payload}), 200
+
 @app.route("/api-autho/authorize", methods=["POST"])
 def authorize():
     # Retrieve access token from request
@@ -154,7 +197,7 @@ def authorize():
     
     # Extract user ID    
     user_id = payload['id']
-    scopes=['read','post','delete', user_id]
+    scopes=['read','post','delete','user']
 
     #up post do thang user -> post phai cho quyen [read, user_id_1]
     # Check if requested scope is included in user scope

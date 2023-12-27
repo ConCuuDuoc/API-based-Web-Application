@@ -17,6 +17,7 @@ import sys
 load_dotenv()
 AUTHEN_URL = os.getenv("AUTHEN_URL")
 AUTHO_URL = os.getenv("AUTHO_URL")
+BLOG_URL = os.getenv("BLOG_URL")
 
 def submit_user(email,password):
     data = {"email":email,"password":password}
@@ -29,6 +30,16 @@ def validate_user(email, password):
     req = requests.post(AUTHEN_URL+"login",json=data)
     response = req.json()
     return response
+
+def blog_up(blog_id,title,content,author):
+    session_id = request.cookies.get('session_id')
+    if session_id:
+        data = {"blog_id":blog_id,"title":title,"content":content,"author":author}
+        print(BLOG_URL+"upload-blog")
+        req = requests.post(BLOG_URL+"upload-blog",json=data,cookies={'session_id': session_id})
+        response = req.json()
+        return response
+    return False
     
 def is_logged_in(session_id):
     if session_id:
@@ -47,6 +58,7 @@ def delete_session(session_id):
         except:
             pass
     return False
+
 # def is_logged_in_cookies(session_id=None):
 #     if session_id == None:
 #         session_id = request.cookies.get('session_id')
@@ -81,4 +93,3 @@ def delete_session(session_id):
 #         return redirect(url_for('login'))
 
 #     return authed_only_wrapper
-    
