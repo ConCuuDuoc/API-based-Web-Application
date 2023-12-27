@@ -79,13 +79,12 @@ def after_request(response):
                 upsert=True
             )
             # Set session cookie for 'session_id'
-            response.set_cookie('session_id', session_id, expires=expiration_time)
 
     return response
 
 @app.route('/api-autho/validate_session',methods=["POST"])
 def validate_session():
-    session_id=request.args.get('session_id')
+    session_id=request.cookies.get('session_id')
     if not session_id:
         return False
     # Query the MongoDB to find the session document with the given session_id
@@ -97,7 +96,25 @@ def validate_session():
     )
     # If the document is found and has an access_token field, return True
     if session_document and 'access_token' in session_document.get('data', {}):
-        return jsonify({"message": "User have logged in"}), 200
+        access_token = session_document['data']['access_token']
+        try:
+        # Decode access token
+            payload = jwt.decode(access_token, PUBLIC_KEY, algorithms=["ES256"])
+
+        except jwt.exceptions.InvalidTokenError as error:
+            return jsonify({"error": f"Invalid access token: {error}"}), 401  
+        except jwt.exceptions.InvalidSignatureError as error:
+            return jsonify({"error": f"Invalid access token: {error}"}), 401 
+        except jwt.exceptions.ExpiredSignatureError as error:
+            return jsonify({"error": f"Invalid access token: {error}"}), 401
+        except jwt.exceptions.InvalidIssuerError as error:
+            return jsonify({"error": f"Invalid access token: {error}"}), 401
+        except jwt.PyJWTError as error:
+            return jsonify({"error": f"{error}"}), 401
+    
+        # Extract user ID    
+        user_id = payload['id']
+        return jsonify({"message": "User have logged in","data":user_id}), 200
     else:
         # If the document or access_token doesn't exist, or the session has expired, return False
         return jsonify({"message": "User not yet logged in"}), 404

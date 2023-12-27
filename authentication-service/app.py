@@ -1,6 +1,6 @@
 import json
 from flask import jsonify
-from flask import request, Flask, session
+from flask import request, Flask
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask import request
 import requests
@@ -48,6 +48,26 @@ def isDuplicate(email : str):
     else:
         return False
 
+def find_user_email_by_id(user_id):
+    action = DB_ENDPOINT + "findOne"
+    payload = json.dumps({
+        "collection": "Data",
+        "database": "Users",
+        "dataSource": "ATM",
+        "filter": {"user_id": user_id}
+    })
+    r = requests.post(action, headers=header, data=payload)
+    # It's important to handle potential errors in the response here
+    if r.status_code != 200:
+        # Handle error (e.g., log it, raise an exception, etc.)
+        return None
+    result = json.loads(r.text).get('document', None)
+    if result:
+        # Assuming 'email' is a field in your MongoDB document
+        return result.get('email', None)
+    else:
+        return None
+
 def generate_token(id : str, expiration_minutes: int = 15):
     expiration_time = datetime.utcnow() + timedelta(minutes=expiration_minutes)
     payload = {'id':id, 'exp':expiration_time}
@@ -60,38 +80,29 @@ def generate_token(id : str, expiration_minutes: int = 15):
 
 # Validate session (Check if user is logged in or not)
 
-def is_user_logged_in(session_id):
-    if not session_id:
-        return False
-    # Assuming the authorization service exposes an endpoint to validate session IDs
-    auth_service_url = AUTHO_SERVER_URL+"validate-session"
-    response = requests.get(auth_service_url, params={'session_id': session_id})
-    
-    if response.status_code == 200:
-        # The authorization service confirms the session is valid
-         return jsonify({"message": "User have logged in"}), 200
-    else:
-        # If the document or access_token doesn't exist, or the session has expired, return False
-        return jsonify({"message": "User not yet logged in"}), 404
-
-    
-    
-@app.route('/api-authen/validate-session')
+@app.route('/api-authen/validate-session',methods=['POST'])
 def check_session():
     # Extract the session_id cookie from the incoming request
-    session_id = request.cookies.get('session_id', None)
+    session_id = request.cookies.get('session_id')
     # Check if the session_id cookie was found
     if session_id is None:
         return jsonify({"error": "Session ID not found in cookies"}), 404
     else:
         # If the session_id cookie is not found, handle the absence accordingly
         pass
-        
-    if not is_user_logged_in(session_id):
-        return jsonify({"error": "User is not logged in"}), 401
+
+    auth_service_url = AUTHO_SERVER_URL+"validate-session"
+    response = requests.post(auth_service_url,cookies={'session_id': session_id})
+    
+    if response.status_code == 200:
+        response.json()
+        user_id = response['data']
+        email = find_user_email_by_id(user_id)
+        # The authorization service confirms the session is valid
+        return jsonify({"message": "User have logged in","email":email}), 200
     else:
-        # Proceed with the logic for a logged-in user
-        return jsonify({"message": "User is logged in"}), 200
+        # If the document or access_token doesn't exist, or the session has expired, return False
+        return jsonify({"message": "User not yet logged in"}), 404
     
 @app.route('/api-authen/signup', methods=['POST'])
 def signup():
@@ -185,12 +196,14 @@ def login():
                 headers={'Authorization': f'{token}'}
                 )
                 if response.status_code !=200:
-                    raise Exception("Error while set session!")
-                #session_id =  response['session_id']
-                #session_id=session_id
+                    raise Exception
+                
+                response=response.json()
+                session_id = response['session_id']
+
             except Exception as error:
                 return jsonify({"error": f"Error login: {error}"}), 500
-            return jsonify(data="Login Success", email=email), 200   
+            return jsonify(data="Login Success", session_id=session_id), 200   
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5012)
