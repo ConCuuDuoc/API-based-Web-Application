@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authorization
+  labels:
+    app: authorization
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: authorization
+  template:
+    metadata:
+      labels:
+        app: authorization
+    spec:
+      containers:
+      - name: authorization
+        image: rosyriso/authorization
+        ports:
+        - containerPort: 5013
+        env:
+        - name: FLASK_ENV
+          value: "production"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authorization
+  labels:
+    app: authorization
+spec:
+  selector:
+    app: authorization
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 5013
+  type: LoadBalancer
