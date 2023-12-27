@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 import os
 import requests
 from json import dumps, loads, dump
-from requestAPI import validate_user,submit_user,is_logged_in,delete_session,blog_up
+from requestAPI import validate_user,submit_user,is_logged_in,delete_session,blog_up,blog_delete,blog_update,blog_read
 
 load_dotenv()
 app = Flask(__name__)
@@ -155,6 +155,77 @@ def post_upload_blog():
             author = request.form.get('author')
             app.logger.warning(f"{blog_id},{title},{content},{author}")
             check_response = blog_up(blog_id,title,content,author)
+
+            if 'Success' in check_response['info']:
+                return render_template('blog.html',announce=check_response['info'])
+            else:
+                return render_template('blog.html',error=check_response['info'])
+        else:
+            raise Exception
+    except Exception as e:
+        app.logger.error(f"Other Error:{e}")
+        return redirect(url_for('blog_page'))
+
+@app.route('/delete-blog', methods=['POST'])
+#@is_logged_in
+def del_delete_blog():
+    try:
+        is_logged = is_logged_in(request.cookies.get('session_id'))
+        app.logger.info(f'ISLOGGED: {is_logged}')
+        if is_logged:
+            blog_id = request.form.get('deleteId')
+            app.logger.warning(f"{blog_id}")
+            check_response = blog_delete(blog_id)
+
+            if 'Success' in check_response['info']:
+                return render_template('blog.html',announce=check_response['info'])
+            else:
+                return render_template('blog.html',error=check_response['info'])
+        else:
+            raise Exception
+    except Exception as e:
+        app.logger.error(f"Other Error:{e}")
+        return redirect(url_for('blog_page'))
+
+@app.route('/update-blog', methods=['POST'])
+#@is_logged_in
+def post_update_blog():
+    try:
+        is_logged = is_logged_in(request.cookies.get('session_id'))
+        app.logger.info(f'ISLOGGED: {is_logged}')
+        if is_logged:
+            blog_id = request.form.get('updateId')
+            title = request.form.get('updateTitle')
+            content = request.form.get('updateContent')
+            author = request.form.get('updateAuthor')
+            app.logger.warning(f"{blog_id},{title},{content},{author}")
+            check_response = blog_update(blog_id,title,content,author)
+
+            if 'Success' in check_response['info']:
+                return render_template('blog.html',announce=check_response['info'])
+            else:
+                return render_template('blog.html',error=check_response['info'])
+        else:
+            raise Exception
+    except Exception as e:
+        app.logger.error(f"Other Error:{e}")
+        return redirect(url_for('blog_page'))
+
+@app.route('/read-blog', methods=['POST'])
+#@is_logged_in
+def get_read_blog():
+    try:
+        is_logged = is_logged_in(request.cookies.get('session_id'))
+        app.logger.info(f'ISLOGGED: {is_logged}')
+        if is_logged:
+            title = request.form.get('getByTitle')
+            app.logger.warning(f"{title}")
+            check_response = blog_read(title)
+
+            if 'Success' in check_response['info']:
+                return render_template('blog.html',announce=check_response['info'])
+            else:
+                return render_template('blog.html',error=check_response['info'])
         else:
             raise Exception
     except Exception as e:

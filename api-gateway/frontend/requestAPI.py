@@ -35,8 +35,34 @@ def blog_up(blog_id,title,content,author):
     session_id = request.cookies.get('session_id')
     if session_id:
         data = {"blog_id":blog_id,"title":title,"content":content,"author":author}
-        print(BLOG_URL+"upload-blog")
         req = requests.post(BLOG_URL+"upload-blog",json=data,cookies={'session_id': session_id})
+        response = req.json()
+        return response
+    return False
+
+def blog_delete(blog_id):
+    session_id = request.cookies.get('session_id')
+    if session_id:
+        data = {"blog_id":blog_id}
+        req = requests.post(BLOG_URL+"delete-blog",json=data,cookies={'session_id': session_id})
+        response = req.json()
+        return response
+    return False
+
+def blog_update(blog_id,title,content,author):
+    session_id = request.cookies.get('session_id')
+    if session_id:
+        data = {"blog_id":blog_id,"title":title,"content":content,"author":author}
+        req = requests.post(BLOG_URL+"update-blog",json=data,cookies={'session_id': session_id})
+        response = req.json()
+        return response
+    return False
+
+def blog_read(title):
+    session_id = request.cookies.get('session_id')
+    if session_id:
+        data = {"title":title}
+        req = requests.post(BLOG_URL+"read-blog",json=data,cookies={'session_id': session_id})
         response = req.json()
         return response
     return False
