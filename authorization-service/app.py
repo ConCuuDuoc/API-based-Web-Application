@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify,  session,g
-from db import get_user_role_scope, find_user, add_user
+from db import find_user
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -11,7 +11,7 @@ import base64
 import jwt
 import json
 
-load_dotenv()  # take environment variables from .env.
+load_dotenv('./.env')   # take environment variables from .env.
 
 PUBLIC_KEY = str(os.getenv("PUBLIC_KEY"))
 SECRET_KEY = str(os.getenv('SECRET_KEY'))
@@ -100,7 +100,6 @@ def validate_session():
         try:
         # Decode access token
             payload = jwt.decode(access_token, PUBLIC_KEY, algorithms=["ES256"])
-
         except jwt.exceptions.InvalidTokenError as error:
             return jsonify({"error": f"Invalid access token: {error}"}), 401  
         except jwt.exceptions.InvalidSignatureError as error:
@@ -128,6 +127,8 @@ def authorize():
     
     try:
         # Decode access token
+        app.logger.warning(f"CC {token}")
+        
         payload = jwt.decode(token, PUBLIC_KEY, algorithms=["ES256"])
 
     except jwt.exceptions.InvalidTokenError as error:
@@ -149,23 +150,13 @@ def authorize():
     # Check if requested scope is included in user scope
     try:
         payload['scope']
-        return jsonify({"error": "Insufficient access rights"}), 401
+        return jsonify({"error": "Insufficient access rights 1"}), 401
     except:
         pass
 
     # Find user in database, if not found, add user
-    if find_user(user_id) == False:
-        add_user(user_id, scopes)
-
-    # Get user role and scope from database
-    try:
-        user_scopes = get_user_role_scope(user_id)
-    except Exception as error:
-        return jsonify({"error": f"Error retrieving user information: {error}"}), 500
-
-    # Check for valid role and scope
-    if  user_scopes is None:
-        return jsonify({"error": "User not found or invalid"}), 403
+    # if find_user(user_id) == False:
+    #     return jsonify({"error": "Insufficient access rights 2"}), 401
 
     # Generate new access token with updated scope if necessary
     new_access_token = None
@@ -196,4 +187,4 @@ def set_token(access_token):
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5013)
+    app.run(host='0.0.0.0', port=5013,debug=True)

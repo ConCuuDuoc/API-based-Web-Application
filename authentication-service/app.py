@@ -15,11 +15,12 @@ import requests
 
 app = Flask(__name__)
 #Secret key for sign cookie
-load_dotenv() 
+load_dotenv('./.env') 
 app.secret_key = os.getenv('SECRET_KEY')
 
 # take environment variables from .env.
 AUTHO_SERVER_URL = os.getenv('AUTHO_SERVER')
+app.logger.warning(AUTHO_SERVER_URL)
 SECRET_KEY = str(os.getenv('SECRET_KEY'))
 
 # Init MongoDB ============================
@@ -206,4 +207,4 @@ def login():
             return jsonify(data="Login Success", session_id=session_id), 200   
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5012)
+    app.run(host='0.0.0.0', port=5012,debug=True)

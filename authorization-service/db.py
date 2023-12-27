@@ -19,66 +19,20 @@ header = {
 def find_user(user_id: str):
     action = db_endpoint + "findOne"
     payload =json.dumps({
-        "collection": "Auth",
-        "database": "Auth",
-        "dataSource": "Cluster0",
-        "filter": {"uid": user_id},
+    "collection":"Data",
+    "database":"Users",
+    "dataSource":"ATM",
+    "filter": {"_id": user_id},
     })
+
     r = requests.post(action,headers=header,data=payload)
     result = json.loads(r.text).get('document')
+    print(result)
     if(result != None):
         return True
     else:
         return False
+    
+find_user('658b0ad001c27944c2237a20')
 
-def add_user(user_id: str, scopes: list ):
-    action = db_endpoint + "insertOne"
-    payload =json.dumps({
-        "collection": "Auth",
-        "database": "Auth",
-        "dataSource": "Cluster0",
-        "document": {"uid": user_id,
-                    "scopes": scopes}
-    })
-    r = requests.post(action,headers=header,data=payload)
-    print(r.text)
-    return None
 
-def get_user_role_scope(user_id: str):
-    # Build the findOne API URL
-    url = db_endpoint + "findOne"
-
-    # Prepare the payload with collection, database, filter, and dataSource
-    payload = {
-        "collection": "Auth",
-        "database": "Auth",
-        "dataSource": "Cluster0",
-        "filter": {"uid": user_id},
-    }
-
-    try:
-        # Send POST request with headers and payload
-        response = requests.post(url, headers=header, json=payload)
-
-        # Raise exception if request fails
-        response.raise_for_status()
-
-    except requests.exceptions.RequestException as error:
-        raise ValueError(f"Error retrieving user information: {error}")
-
-    # Parse the JSON response
-    data = response.json()
-
-    # Check if document exists
-    document = data.get("document")
-    if not document:
-        return None, None
-
-    # Extract user role and scopes from document
-    try:
-        user_scopes = document["scopes"]
-    except KeyError as error:
-        raise ValueError(f"Missing required fields in user document: {error}")
-
-    # Return user role and scopes
-    return  user_scopes
