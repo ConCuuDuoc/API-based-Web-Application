@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 import os
 import requests
 from json import dumps, loads, dump
-from requestAPI import validate_user,submit_user,is_logged_in
+from requestAPI import validate_user,submit_user,is_logged_in,delete_session
 
 load_dotenv()
 app = Flask(__name__)
@@ -21,17 +21,17 @@ app.secret_key = str(os.getenv('SECRET_KEY'))
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     # Retrieve cookies from the incoming request
+    try:
+        cookies = request.cookies
+        token_encoded = cookies.get('session_id')
+        if is_logged_in(token_encoded):
+            return redirect(url_for('get_dashboard'))
+    except:
+        pass
     
 
     # Handle the POST request when the login form is submitted
     if request.method == 'POST':
-        try:
-            cookies = request.cookies
-            token_encoded = cookies.get('session_id')
-            if is_logged_in(token_encoded):
-                return render_template('login.html', announce='User already logged in')
-        except:
-            pass
         # Extract email and password from the form data
         email, password = request.form["email"], request.form["password"]
         check_response = validate_user(email, password)
@@ -73,12 +73,12 @@ def register():
             return render_template('register.html', error="Password does not match")
         
         # Attempt to register the user
-        status = submit_user(email, password, email)
-        if status != "User sign up successfully, please return to login":
-            return render_template('register.html', error=status)
-        
+        status = submit_user(email, password)
+        app.logger.info(status)
+        if 'Success' in status['info']:
+            return redirect(url_for("login"))
         # Render the register page with a success message
-        return render_template('register.html', announce=status)
+        return render_template('register.html', error=status['info'])
 
     # Render the register page for GET requests
     return render_template('register.html')
@@ -91,6 +91,22 @@ def get_dashboard():
         app.logger.info(f'ISLOGGED: {is_logged}')
         if is_logged:
             return render_template("dashboard.html")
+        else:
+            raise Exception
+    except Exception as e:
+        app.logger.error(f"Other Error:{e}")
+        return redirect(url_for('login'))
+    
+@app.route('/logout',methods=['GET','POST'])
+def logout():
+    try:
+        is_logged = is_logged_in(request.cookies.get('session_id'))
+        app.logger.info(f'ISLOGGED: {is_logged}')
+        if is_logged:
+            delete_session(request.cookies.get('session_id'))
+            response = make_response(redirect(url_for('login')))
+            response.set_cookie('session_id', value='', max_age=0)
+            return response
         else:
             raise Exception
     except Exception as e:

@@ -104,13 +104,37 @@ def check_session():
         # If the document or access_token doesn't exist, or the session has expired, return False
         return jsonify({"info": "User not yet logged in"}), 403
     
+@app.route('/api-authen/delete-session',methods=['POST'])
+def delete_session():
+    # Extract the session_id cookie from the incoming request
+    session_id = request.cookies.get('session_id')
+    app.logger.warning(session_id)
+    # Check if the session_id cookie was found
+    if session_id is None:
+        return jsonify({"error": "Session ID not found in cookies"}), 404
+    else:
+        # If the session_id cookie is not found, handle the absence accordingly
+        pass
+
+    # auth_service_url = AUTHO_SERVER_URL+"validate-session"
+    # app.logger.warning(auth_service_url)
+    # response = requests.post(auth_service_url,cookies={'session_id': session_id})
+    response = requests.post(AUTHO_SERVER_URL+"delete-session",json={'session_id': session_id})
+    
+    if response.status_code == 200:
+        # The authorization service confirms the session is valid
+        return jsonify({"info": "Logging out"}), 200
+    else:
+        # If the document or access_token doesn't exist, or the session has expired, return False
+        return jsonify({"info": "User not yet logged in"}), 403
+    
 @app.route('/api-authen/signup', methods=['POST'])
 def signup():
 
     try:
         json_req = request.get_json()
     except Exception as ex:
-        return jsonify(message='Request Body incorrect json format: ' + str(ex)),442
+        return jsonify(info='Request Body incorrect json format: ' + str(ex)),442
 
     # Trim input body
     json_body = {}
@@ -123,7 +147,7 @@ def signup():
     # Validate request body
     is_not_validate = SignupBodyValidation().validate(json_body)  # Dictionary show detail error fields
     if is_not_validate:
-        return jsonify(data=is_not_validate, message='Invalid parameters')
+        return jsonify(data=is_not_validate, info='Invalid parameters')
 
     email = json_body.get('email')
     password = json_body.get('password')
@@ -131,7 +155,7 @@ def signup():
 
 
     if isDuplicate(email):
-        return jsonify(data="User Already Existed"),442
+        return jsonify(info="User Already Existed"),442
     else:
         action = DB_ENDPOINT + "insertOne"
         payload =json.dumps({
@@ -145,7 +169,7 @@ def signup():
         })
         r = requests.post(action,headers=header,data=payload)
         print(r.text)
-        return jsonify(data="Signup Success"),200
+        return jsonify(info="Signup Success"),200
 
 
 @app.route('/api-authen/login', methods=['POST'])
@@ -153,7 +177,7 @@ def login():
     try:
         json_req = request.get_json()
     except Exception as ex:
-        return jsonify(message='Request Body incorrect json format: ' + str(ex)), 442
+        return jsonify(info='Request Body incorrect json format: ' + str(ex)), 442
     
     # trim input body
     json_body = {}

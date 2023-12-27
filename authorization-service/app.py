@@ -29,7 +29,7 @@ try:
     session_collection = db['access-sessions']
 
 except Exception as error:
-    print("error:" f"Error login: {error}")
+    print("info:" f"Error DB: {error}")
 # =========================================
 # Set up for session=======================
 def generate_session_id():
@@ -84,7 +84,7 @@ def after_request(response):
 
 @app.route('/api-autho/validate-session',methods=["POST"])
 def validate_session():
-    app.logger.info(f"VALIDATE_SESSION: {request.get_json('session_id')}")
+    # app.logger.info(f"VALIDATE_SESSION: {request.get_json('session_id')}")
     session_id = request.get_json()['session_id']
     if not session_id:
         return False
@@ -104,27 +104,53 @@ def validate_session():
         # If the document or access_token doesn't exist, or the session has expired, return False
         return jsonify({"info": "User not yet logged in"}), 404
 
+@app.route('/api-autho/delete-session',methods=["POST"])
+def delete_session():
+    # app.logger.info(f"VALIDATE_SESSION: {request.get_json('session_id')}")
+    session_id = request.get_json()['session_id']
+    if not session_id:
+        return False
+    # Query the MongoDB to find the session document with the given session_id
+    session_document = session_collection.find_one(
+        {
+            'session_id': session_id,
+            'expires_at': {'$gt': datetime.utcnow()}  # Check that the session hasn't expired
+        }
+    )
+    # If the document is found and has an access_token field, return True
+    if session_document and 'access_token' in session_document.get('data', {}):
+        deletion_result = session_collection.delete_one({'session_id': session_id})
+        if deletion_result.deleted_count > 0:
+            session.clear()
+            return jsonify({"info":f"Deleted session with session_id: {session_id}"}),200
+        else:
+            return jsonify({"info":f"No session found with session_id: {session_id}"}),403
+    else:
+        # app.logger.warning("User not logged")
+        # If the document or access_token doesn't exist, or the session has expired, return False
+        return jsonify({"info": "No session found with session_id"}), 403
+
 @app.route("/api-autho/authorize", methods=["POST"])
 def authorize():
     # Retrieve access token from request
     token = request.headers.get("Authorization")
     if token == None:
-        return jsonify({"error": "Missing authorization token"}), 401
+        return jsonify({"info": "Missing authorization token"}), 401
     
     try:
         # Decode access token
         payload = jwt.decode(token, PUBLIC_KEY, algorithms=["ES256"])
 
     except jwt.exceptions.InvalidTokenError as error:
-        return jsonify({"error": f"Invalid access token: {error}"}), 401  
+        return jsonify({"info": f"Invalid access token: {error}"}), 401  
     except jwt.exceptions.InvalidSignatureError as error:
-        return jsonify({"error": f"Invalid access token: {error}"}), 401 
+        return jsonify({"info": f"Invalid access token: {error}"}), 401 
     except jwt.exceptions.ExpiredSignatureError as error:
-        return jsonify({"error": f"Invalid access token: {error}"}), 401
+        return jsonify({"info": f"Invalid access token: {error}"}), 401
     except jwt.exceptions.InvalidIssuerError as error:
-        return jsonify({"error": f"Invalid access token: {error}"}), 401
+        return jsonify({"info": f"Invalid access token: {error}"}), 401
     except jwt.PyJWTError as error:
-        return jsonify({"error": f"{error}"}), 401
+        return jsonify({"info": f"{error}"}), 401
     
     # Extract user ID    
     user_id = payload['id']
@@ -134,13 +160,13 @@ def authorize():
     # Check if requested scope is included in user scope
     try:
         payload['scope']
-        return jsonify({"error": "Insufficient access rights"}), 401
+        return jsonify({"info": "Insufficient access rights"}), 401
     except:
         pass
 
     # Find user in database, if not found, add user
     if find_user(user_id) == False:
-        return jsonify({"error": "Insufficient access rights"}), 401
+        return jsonify({"info": "Insufficient access rights"}), 401
 
     # Generate new access token with updated scope if necessary
     new_access_token = None
@@ -158,13 +184,13 @@ def authorize():
         session_id = session['session_id'] 
         if session_id:
             # Return the session_id only if it exists
-            return jsonify({"message": "Access token set in session", "session_id": session_id}), 200
+            return jsonify({"info": "Access token set in session", "session_id": session_id}), 200
         else:
             # Handle the case where the session_id is not found
-            return jsonify({"error": "Session ID not found"}), 400
+            return jsonify({"info": "Session ID not found"}), 400
     else:
         # Handle the case where the access token was not generated
-        return jsonify({"error": "Failed to generate access token"}), 500
+        return jsonify({"info": "Failed to generate access token"}), 500
 def set_token(access_token):
     session['access_token'] = access_token
     return 

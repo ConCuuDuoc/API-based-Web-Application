@@ -22,8 +22,7 @@ def submit_user(email,password):
     data = {"email":email,"password":password}
     req = requests.post(AUTHEN_URL+"signup",json=data)
     response = req.json()
-    status = response['status']
-    return status
+    return response
 
 def validate_user(email, password):
     data = {"email":email,"password":password}
@@ -40,6 +39,14 @@ def is_logged_in(session_id):
             pass
     return False
 
+def delete_session(session_id):
+    if session_id:
+        req = requests.post(AUTHEN_URL+"delete-session",cookies={'session_id': session_id}).json()
+        try:
+            return not("not" in req['info'])
+        except:
+            pass
+    return False
 # def is_logged_in_cookies(session_id=None):
 #     if session_id == None:
 #         session_id = request.cookies.get('session_id')
