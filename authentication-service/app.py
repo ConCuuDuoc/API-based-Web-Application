@@ -48,25 +48,25 @@ def isDuplicate(email : str):
     else:
         return False
 
-def find_user_email_by_id(user_id):
-    action = DB_ENDPOINT + "findOne"
-    payload = json.dumps({
-        "collection": "Data",
-        "database": "Users",
-        "dataSource": "ATM",
-        "filter": {"user_id": user_id}
-    })
-    r = requests.post(action, headers=header, data=payload)
-    # It's important to handle potential errors in the response here
-    if r.status_code != 200:
-        # Handle error (e.g., log it, raise an exception, etc.)
-        return None
-    result = json.loads(r.text).get('document', None)
-    if result:
-        # Assuming 'email' is a field in your MongoDB document
-        return result.get('email', None)
-    else:
-        return None
+# def find_user_email_by_id(user_id):
+#     action = DB_ENDPOINT + "findOne"
+#     payload = json.dumps({
+#         "collection": "Data",
+#         "database": "Users",
+#         "dataSource": "ATM",
+#         "filter": {"user_id": user_id}
+#     })
+#     r = requests.post(action, headers=header, data=payload)
+#     # It's important to handle potential errors in the response here
+#     if r.status_code != 200:
+#         # Handle error (e.g., log it, raise an exception, etc.)
+#         return None
+#     result = json.loads(r.text).get('document', None)
+#     if result:
+#         # Assuming 'email' is a field in your MongoDB document
+#         return result.get('email', None)
+#     else:
+#         return None
 
 def generate_token(id : str, expiration_minutes: int = 15):
     expiration_time = datetime.utcnow() + timedelta(minutes=expiration_minutes)
@@ -84,6 +84,7 @@ def generate_token(id : str, expiration_minutes: int = 15):
 def check_session():
     # Extract the session_id cookie from the incoming request
     session_id = request.cookies.get('session_id')
+    app.logger.warning(session_id)
     # Check if the session_id cookie was found
     if session_id is None:
         return jsonify({"error": "Session ID not found in cookies"}), 404
@@ -92,17 +93,16 @@ def check_session():
         pass
 
     auth_service_url = AUTHO_SERVER_URL+"validate-session"
-    response = requests.post(auth_service_url,cookies={'session_id': session_id})
+    app.logger.warning(auth_service_url)
+    # response = requests.post(auth_service_url,cookies={'session_id': session_id})
+    response = requests.post(AUTHO_SERVER_URL+"validate-session",json={'session_id': session_id})
     
     if response.status_code == 200:
-        response.json()
-        user_id = response['data']
-        email = find_user_email_by_id(user_id)
         # The authorization service confirms the session is valid
-        return jsonify({"message": "User have logged in","email":email}), 200
+        return jsonify({"info": "User have logged in"}), 200
     else:
         # If the document or access_token doesn't exist, or the session has expired, return False
-        return jsonify({"message": "User not yet logged in"}), 404
+        return jsonify({"info": "User not yet logged in"}), 403
     
 @app.route('/api-authen/signup', methods=['POST'])
 def signup():
@@ -163,7 +163,7 @@ def login():
     # Validate request body
     is_not_validate = LoginBodyValidation().validate(json_body)  # Dictionary show detail error fields
     if is_not_validate:
-        return jsonify(data=is_not_validate, message='Invalid params')
+        return jsonify(data=is_not_validate, info='Invalid params')
 
     #Check email and password
     email = json_body.get('email')
@@ -202,8 +202,8 @@ def login():
                 session_id = response['session_id']
 
             except Exception as error:
-                return jsonify({"error": f"Error login: {error}"}), 500
-            return jsonify(data="Login Success", session_id=session_id), 200   
+                return jsonify({"info": f"Error {error}"}), 500
+            return jsonify({"info":"Success", "session_id":session_id}), 200   
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5012)
+    app.run(host='0.0.0.0', port=5012,debug=True)

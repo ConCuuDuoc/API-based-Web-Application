@@ -29,36 +29,29 @@ def validate_user(email, password):
     data = {"email":email,"password":password}
     req = requests.post(AUTHEN_URL+"login",json=data)
     response = req.json()
-    try:
-        message = response['data']
-        session_id = response['session_id']
-        return response
-    except:
-        return False
+    return response
     
 def is_logged_in(session_id):
     if session_id:
-        req = requests.post(AUTHEN_URL+"validate-session",cookies={'session_id': session_id})
+        req = requests.post(AUTHEN_URL+"validate-session",cookies={'session_id': session_id}).json()
         try:
-            message = req['message']
-            return True
+            return not("not" in req['info'])
         except:
-            return False
+            pass
     return False
 
-def is_logged_in_cookies(session_id=None):
-    if session_id == None:
-        session_id = request.cookies.get('session_id')
-    if session_id:
-        req = requests.post(AUTHEN_URL+"validate-session",cookies={'session_id': session_id})
-        try:
-            message = req['message']
-            email = req['email']
-            return email
-        except:
-            return None
+# def is_logged_in_cookies(session_id=None):
+#     if session_id == None:
+#         session_id = request.cookies.get('session_id')
+#     if session_id:
+#         req = requests.post(AUTHEN_URL+"validate-session",cookies={'session_id': session_id})
+#         try:
+#             message = req['message']
+#             return True
+#         except:
+#             return False
     
-    return None
+#     return False
 
 # def is_logged_in_cookies(f):
 #     functools.wraps(f)

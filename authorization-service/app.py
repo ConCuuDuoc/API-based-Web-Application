@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify,  session,g
-from db import get_user_role_scope, find_user, add_user
+from db import find_user
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
@@ -82,9 +82,10 @@ def after_request(response):
 
     return response
 
-@app.route('/api-autho/validate_session',methods=["POST"])
+@app.route('/api-autho/validate-session',methods=["POST"])
 def validate_session():
-    session_id=request.cookies.get('session_id')
+    app.logger.info(f"VALIDATE_SESSION: {request.get_json('session_id')}")
+    session_id = request.get_json()['session_id']
     if not session_id:
         return False
     # Query the MongoDB to find the session document with the given session_id
@@ -96,28 +97,12 @@ def validate_session():
     )
     # If the document is found and has an access_token field, return True
     if session_document and 'access_token' in session_document.get('data', {}):
-        access_token = session_document['data']['access_token']
-        try:
-        # Decode access token
-            payload = jwt.decode(access_token, PUBLIC_KEY, algorithms=["ES256"])
-
-        except jwt.exceptions.InvalidTokenError as error:
-            return jsonify({"error": f"Invalid access token: {error}"}), 401  
-        except jwt.exceptions.InvalidSignatureError as error:
-            return jsonify({"error": f"Invalid access token: {error}"}), 401 
-        except jwt.exceptions.ExpiredSignatureError as error:
-            return jsonify({"error": f"Invalid access token: {error}"}), 401
-        except jwt.exceptions.InvalidIssuerError as error:
-            return jsonify({"error": f"Invalid access token: {error}"}), 401
-        except jwt.PyJWTError as error:
-            return jsonify({"error": f"{error}"}), 401
-    
-        # Extract user ID    
-        user_id = payload['id']
-        return jsonify({"message": "User have logged in","data":user_id}), 200
+        app.logger.warning("User log")
+        return jsonify({"info": "User have logged in"}), 200
     else:
+        app.logger.warning("User not logged")
         # If the document or access_token doesn't exist, or the session has expired, return False
-        return jsonify({"message": "User not yet logged in"}), 404
+        return jsonify({"info": "User not yet logged in"}), 404
 
 @app.route("/api-autho/authorize", methods=["POST"])
 def authorize():
@@ -155,17 +140,7 @@ def authorize():
 
     # Find user in database, if not found, add user
     if find_user(user_id) == False:
-        add_user(user_id, scopes)
-
-    # Get user role and scope from database
-    try:
-        user_scopes = get_user_role_scope(user_id)
-    except Exception as error:
-        return jsonify({"error": f"Error retrieving user information: {error}"}), 500
-
-    # Check for valid role and scope
-    if  user_scopes is None:
-        return jsonify({"error": "User not found or invalid"}), 403
+        return jsonify({"error": "Insufficient access rights"}), 401
 
     # Generate new access token with updated scope if necessary
     new_access_token = None
@@ -196,4 +171,4 @@ def set_token(access_token):
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5013)
+    app.run(host='0.0.0.0', port=5013, debug=True)
