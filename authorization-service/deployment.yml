@@ -25,7 +25,7 @@ spec:
 
 ---
 apiVersion: v1
-kind: Service
+kind: Service 
 metadata:
   name: authorization
   labels:
@@ -38,4 +38,6 @@ spec:
     protocol: TCP
     port: 80
     targetPort: 5013
-  type: LoadBalancer
+  type: ClusterIP
+
+

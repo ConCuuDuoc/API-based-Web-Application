@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: authentication
-        image: rosyriso/authentication
+        image: rosyriso/authentication:deploy-v2
         ports:
         - containerPort: 5012
         env:
@@ -38,4 +38,4 @@ spec:
     protocol: TCP
     port: 80
     targetPort: 5012
-  type: LoadBalancer
+  type: ClusterIP

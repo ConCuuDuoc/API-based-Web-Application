@@ -14,11 +14,11 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: rosyriso/api-gateway-nginx
+        image: rosyriso/api-gateway-nginx:deploy-v3
         ports:
         - containerPort: 80
       - name: frontend-service
-        image: rosyriso/api-gateway-frontend-service
+        image: rosyriso/api-gateway-frontend-service:deploy-v2
         ports:
         - containerPort: 5015
 
