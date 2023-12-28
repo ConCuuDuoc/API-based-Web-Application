@@ -1,6 +1,6 @@
 import json
 from flask import jsonify
-from flask import request, Flask, session
+from flask import request, Flask
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask import request
 import requests
@@ -48,6 +48,26 @@ def isDuplicate(email : str):
     else:
         return False
 
+# def find_user_email_by_id(user_id):
+#     action = DB_ENDPOINT + "findOne"
+#     payload = json.dumps({
+#         "collection": "Data",
+#         "database": "Users",
+#         "dataSource": "ATM",
+#         "filter": {"user_id": user_id}
+#     })
+#     r = requests.post(action, headers=header, data=payload)
+#     # It's important to handle potential errors in the response here
+#     if r.status_code != 200:
+#         # Handle error (e.g., log it, raise an exception, etc.)
+#         return None
+#     result = json.loads(r.text).get('document', None)
+#     if result:
+#         # Assuming 'email' is a field in your MongoDB document
+#         return result.get('email', None)
+#     else:
+#         return None
+
 def generate_token(id : str, expiration_minutes: int = 15):
     expiration_time = datetime.utcnow() + timedelta(minutes=expiration_minutes)
     payload = {'id':id, 'exp':expiration_time}
@@ -60,38 +80,53 @@ def generate_token(id : str, expiration_minutes: int = 15):
 
 # Validate session (Check if user is logged in or not)
 
-def is_user_logged_in(session_id):
-    if not session_id:
-        return False
-    # Assuming the authorization service exposes an endpoint to validate session IDs
-    auth_service_url = AUTHO_SERVER_URL+"validate-session"
-    response = requests.get(auth_service_url, params={'session_id': session_id})
-    
-    if response.status_code == 200:
-        # The authorization service confirms the session is valid
-         return jsonify({"message": "User have logged in"}), 200
-    else:
-        # If the document or access_token doesn't exist, or the session has expired, return False
-        return jsonify({"message": "User not yet logged in"}), 404
-
-    
-    
-@app.route('/api-authen/validate-session')
+@app.route('/api-authen/validate-session',methods=['POST'])
 def check_session():
     # Extract the session_id cookie from the incoming request
-    session_id = request.cookies.get('session_id', None)
+    session_id = request.cookies.get('session_id')
+    app.logger.warning(session_id)
     # Check if the session_id cookie was found
     if session_id is None:
         return jsonify({"error": "Session ID not found in cookies"}), 404
     else:
         # If the session_id cookie is not found, handle the absence accordingly
         pass
-        
-    if not is_user_logged_in(session_id):
-        return jsonify({"error": "User is not logged in"}), 401
+
+    auth_service_url = AUTHO_SERVER_URL+"validate-session"
+    app.logger.warning(auth_service_url)
+    # response = requests.post(auth_service_url,cookies={'session_id': session_id})
+    response = requests.post(AUTHO_SERVER_URL+"validate-session",json={'session_id': session_id})
+    
+    if response.status_code == 200:
+        # The authorization service confirms the session is valid
+        return jsonify({"info": "User have logged in"}), 200
     else:
-        # Proceed with the logic for a logged-in user
-        return jsonify({"message": "User is logged in"}), 200
+        # If the document or access_token doesn't exist, or the session has expired, return False
+        return jsonify({"info": "User not yet logged in"}), 403
+    
+@app.route('/api-authen/delete-session',methods=['POST'])
+def delete_session():
+    # Extract the session_id cookie from the incoming request
+    session_id = request.cookies.get('session_id')
+    app.logger.warning(session_id)
+    # Check if the session_id cookie was found
+    if session_id is None:
+        return jsonify({"error": "Session ID not found in cookies"}), 404
+    else:
+        # If the session_id cookie is not found, handle the absence accordingly
+        pass
+
+    # auth_service_url = AUTHO_SERVER_URL+"validate-session"
+    # app.logger.warning(auth_service_url)
+    # response = requests.post(auth_service_url,cookies={'session_id': session_id})
+    response = requests.post(AUTHO_SERVER_URL+"delete-session",json={'session_id': session_id})
+    
+    if response.status_code == 200:
+        # The authorization service confirms the session is valid
+        return jsonify({"info": "Logging out"}), 200
+    else:
+        # If the document or access_token doesn't exist, or the session has expired, return False
+        return jsonify({"info": "User not yet logged in"}), 403
     
 @app.route('/api-authen/signup', methods=['POST'])
 def signup():
@@ -99,7 +134,7 @@ def signup():
     try:
         json_req = request.get_json()
     except Exception as ex:
-        return jsonify(message='Request Body incorrect json format: ' + str(ex)),442
+        return jsonify(info='Request Body incorrect json format: ' + str(ex)),442
 
     # Trim input body
     json_body = {}
@@ -112,7 +147,7 @@ def signup():
     # Validate request body
     is_not_validate = SignupBodyValidation().validate(json_body)  # Dictionary show detail error fields
     if is_not_validate:
-        return jsonify(data=is_not_validate, message='Invalid parameters')
+        return jsonify(data=is_not_validate, info='Invalid parameters')
 
     email = json_body.get('email')
     password = json_body.get('password')
@@ -120,7 +155,7 @@ def signup():
 
 
     if isDuplicate(email):
-        return jsonify(data="User Already Existed"),442
+        return jsonify(info="User Already Existed"),442
     else:
         action = DB_ENDPOINT + "insertOne"
         payload =json.dumps({
@@ -134,7 +169,7 @@ def signup():
         })
         r = requests.post(action,headers=header,data=payload)
         print(r.text)
-        return jsonify(data="Signup Success"),200
+        return jsonify(info="Signup Success"),200
 
 
 @app.route('/api-authen/login', methods=['POST'])
@@ -142,7 +177,7 @@ def login():
     try:
         json_req = request.get_json()
     except Exception as ex:
-        return jsonify(message='Request Body incorrect json format: ' + str(ex)), 442
+        return jsonify(info='Request Body incorrect json format: ' + str(ex)), 442
     
     # trim input body
     json_body = {}
@@ -152,7 +187,7 @@ def login():
     # Validate request body
     is_not_validate = LoginBodyValidation().validate(json_body)  # Dictionary show detail error fields
     if is_not_validate:
-        return jsonify(data=is_not_validate, message='Invalid params')
+        return jsonify(data=is_not_validate, info='Invalid params')
 
     #Check email and password
     email = json_body.get('email')
@@ -182,15 +217,17 @@ def login():
             try:
                 response = requests.post(
                 AUTHO_SERVER_URL+"authorize",
-                headers={'Authorization': f'{token}'}
+                headers={'Authorization': f'{token}'},json={"email":email}
                 )
                 if response.status_code !=200:
-                    raise Exception("Error while set session!")
-                #session_id =  response['session_id']
-                #session_id=session_id
+                    raise Exception
+                
+                response=response.json()
+                session_id = response['session_id']
+
             except Exception as error:
-                return jsonify({"error": f"Error login: {error}"}), 500
-            return jsonify(data="Login Success", email=email), 200   
+                return jsonify({"info": f"Error {error}"}), 500
+            return jsonify({"info":"Success", "session_id":session_id}), 200   
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5012)
+    app.run(host='0.0.0.0', port=5012,debug=True)
