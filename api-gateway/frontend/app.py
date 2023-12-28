@@ -95,12 +95,12 @@ def register():
 @app.route('/dashboard',methods=["GET"])
 def get_dashboard():
     try:
-        is_logged = is_logged_in(request.cookies.get('session_id'))
-        app.logger.info(f'ISLOGGED: {is_logged}')
-        if is_logged:
-            return render_template("dashboard.html")
+        check_response = is_logged_in(request.cookies.get('session_id'),"get-email")
+        app.logger.info(f'ISLOGGED: {check_response}')
+        if 'logged' in check_response['info']:
+            return render_template('dashboard.html',email=check_response['email'])
         else:
-            raise Exception
+            return render_template('dashboard.html',email="Error")
     except Exception as e:
         app.logger.error(f"Other Error:{e}")
         return redirect(url_for('login'))

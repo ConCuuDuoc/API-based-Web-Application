@@ -105,13 +105,20 @@ def blog_read(title):
         return response
     return False
     
-def is_logged_in(session_id):
+def is_logged_in(session_id,flag=None):
     if session_id:
-        req = requests.post(AUTHEN_URL+"validate-session",cookies={'session_id': session_id}).json()
-        try:
-            return not("not" in req['info'])
-        except:
-            pass
+        if flag is not None:
+            req = requests.post(AUTHEN_URL+"validate-session",cookies={'session_id': session_id,"flag":"get-email"}).json()
+            try:
+                return req
+            except:
+                pass
+        else:
+            req = requests.post(AUTHEN_URL+"validate-session",cookies={'session_id': session_id}).json()
+            try:
+                return not("not" in req['info'])
+            except:
+                pass
     return False
 
 def delete_session(session_id):

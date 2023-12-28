@@ -11,6 +11,7 @@ import jwcrypto.jwk as jwk
 from datetime import datetime, timedelta
 from validator import SignupBodyValidation, LoginBodyValidation
 import requests
+from bson import ObjectId
 
 
 app = Flask(__name__)
@@ -48,25 +49,28 @@ def isDuplicate(email : str):
     else:
         return False
 
-# def find_user_email_by_id(user_id):
-#     action = DB_ENDPOINT + "findOne"
-#     payload = json.dumps({
-#         "collection": "Data",
-#         "database": "Users",
-#         "dataSource": "ATM",
-#         "filter": {"user_id": user_id}
-#     })
-#     r = requests.post(action, headers=header, data=payload)
-#     # It's important to handle potential errors in the response here
-#     if r.status_code != 200:
-#         # Handle error (e.g., log it, raise an exception, etc.)
-#         return None
-#     result = json.loads(r.text).get('document', None)
-#     if result:
-#         # Assuming 'email' is a field in your MongoDB document
-#         return result.get('email', None)
-#     else:
-#         return None
+def find_user_email_by_id(user_id):
+    action = DB_ENDPOINT + "findOne"
+    payload = json.dumps({
+        "collection": "Data",
+        "database": "Users",
+        "dataSource": "ATM",
+        "filter": {"_id": {"$oid": user_id}}
+    })
+    r = requests.post(action, headers=header, data=payload)
+
+    if r.status_code != 200:
+        # Log the error message for debugging
+        error_message = r.text 
+        app.logger.info(f"Error: {error_message}")
+
+        return None
+
+    result = json.loads(r.text).get('document', None)
+    if result:
+        return result.get('email', None)  # Ensure this matches the document's field name
+    else:
+        return None
 
 def generate_token(id : str, expiration_minutes: int = 15):
     expiration_time = datetime.utcnow() + timedelta(minutes=expiration_minutes)
@@ -84,6 +88,10 @@ def generate_token(id : str, expiration_minutes: int = 15):
 def check_session():
     # Extract the session_id cookie from the incoming request
     session_id = request.cookies.get('session_id')
+    try:
+        flag = request.cookies.get('flag')
+    except:
+        flag = None
     app.logger.warning(session_id)
     # Check if the session_id cookie was found
     if session_id is None:
@@ -91,18 +99,33 @@ def check_session():
     else:
         # If the session_id cookie is not found, handle the absence accordingly
         pass
-
-    auth_service_url = AUTHO_SERVER_URL+"validate-session"
-    app.logger.warning(auth_service_url)
     # response = requests.post(auth_service_url,cookies={'session_id': session_id})
-    response = requests.post(AUTHO_SERVER_URL+"validate-session",json={'session_id': session_id})
-    
-    if response.status_code == 200:
-        # The authorization service confirms the session is valid
-        return jsonify({"info": "User have logged in"}), 200
+    if flag is not None:
+        response = requests.post(AUTHO_SERVER_URL+"validate-session",json={'session_id': session_id,'flag':flag})
+        if response.status_code == 200:
+            response = response.json()
+            app.logger.info(f"Response from autho: {response}")
+            user_id = response['user_id']
+            try:
+                email = find_user_email_by_id(user_id)
+                app.logger.info(f"Email: {email}")
+            except:
+                return jsonify({"info": "Cannot find user's email"}), 403
+            # The authorization service confirms the session is valid
+            return jsonify({"info": "User have logged in","email":email}), 200
+        else:
+            # If the document or access_token doesn't exist, or the session has expired, return False
+            return jsonify({"info": "User not yet logged in"}), 403
     else:
-        # If the document or access_token doesn't exist, or the session has expired, return False
-        return jsonify({"info": "User not yet logged in"}), 403
+        response = requests.post(AUTHO_SERVER_URL+"validate-session",json={'session_id': session_id})
+        if response.status_code == 200:
+            # The authorization service confirms the session is valid
+            return jsonify({"info": "User have logged in"}), 200
+        else:
+            # If the document or access_token doesn't exist, or the session has expired, return False
+            return jsonify({"info": "User not yet logged in"}), 403
+    
+    
     
 @app.route('/api-authen/delete-session',methods=['POST'])
 def delete_session():
