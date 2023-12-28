@@ -15,6 +15,7 @@ load_dotenv()  # take environment variables from .env.
 
 PUBLIC_KEY = str(os.getenv("PUBLIC_KEY"))
 SECRET_KEY = str(os.getenv('SECRET_KEY'))
+ADMIN = str(os.getenv('ADMIN'))
 
 app = Flask(__name__)
 app.config['PROPAGATE_EXCEPTIONS'] = True
@@ -177,8 +178,9 @@ def get_scope():
 def authorize():
     # Retrieve access token from request
     token = request.headers.get("Authorization")
-    if token == None:
-        return jsonify({"info": "Missing authorization token"}), 401
+    email = request.get_json()['email']
+    if token == None or email == None:
+        return jsonify({"info": "Missing authorization token or email"}), 401
     
     try:
         # Decode access token
@@ -197,7 +199,10 @@ def authorize():
     
     # Extract user ID    
     user_id = payload['id']
-    scopes=['read','post','delete','user']
+    if email == ADMIN:
+        scopes=['read','post','delete','admin']
+    else:
+        scopes=['read','post','delete','user']
 
     #up post do thang user -> post phai cho quyen [read, user_id_1]
     # Check if requested scope is included in user scope

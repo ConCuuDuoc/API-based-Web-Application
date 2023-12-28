@@ -217,7 +217,7 @@ def login():
             try:
                 response = requests.post(
                 AUTHO_SERVER_URL+"authorize",
-                headers={'Authorization': f'{token}'}
+                headers={'Authorization': f'{token}'},json={"email":email}
                 )
                 if response.status_code !=200:
                     raise Exception

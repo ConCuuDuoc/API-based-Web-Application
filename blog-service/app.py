@@ -116,7 +116,7 @@ def upload_blog():
 @app.route('/api-blog/delete-blog', methods=['POST'])
 def delete_blog():
     session_id = request.cookies.get('session_id')
-    app.logger.warning(session_id)
+    app.logger.warning(f"Session id:{session_id}")
     # Check if the session_id cookie was found
     if session_id is None:
         return jsonify({"error": "Session ID not found in cookies"}), 404
@@ -125,10 +125,11 @@ def delete_blog():
         pass
 
     auth_service_url = AUTHO_SERVER_URL+"get-scope"
-    app.logger.warning(auth_service_url)
+    #app.logger.warning(auth_service_url)
     # response = requests.post(auth_service_url,cookies={'session_id': session_id})
     response = requests.post(AUTHO_SERVER_URL+"get-scope",cookies={'session_id': session_id}).json()
     access_token =  response['access_token']
+    app.logger.info(f'User scope: {access_token}')
 
     if ("delete" in access_token['scopes']):
         request_data = request.get_json()
@@ -150,12 +151,32 @@ def delete_blog():
             return None
         result = json.loads(r.text).get('document', None)
 
-        app.logger.info(f"Query: {result}")
-        app.logger.info(result['object_scope'])
+        #app.logger.info(f"Query: {result}")
+        #app.logger.info(result['object_scope'])
         if result:
-            # Get user_id yessir
+            # Check admin priv
+            if 'admin' in access_token['scopes'] and 'delete' in result['object_scope']:
+
+                action = db_endpoint + "deleteOne"
+                payload = json.dumps({
+                    "collection": "Blog",
+                    "database": "ATM",
+                    "dataSource": "ROSY",
+                    "filter": {"id": id}
+                })
+
+                r = requests.post(action, headers=header, data=payload)
+                result = json.loads(r.text)
+
+                if result.get('deletedCount', 0) > 0:
+                    return jsonify(info="Blog deleted Successfully"),200
+                else:
+                    return jsonify(info="Blog not found or could not be deleted"),404
+            
+            # Check normal user
             if not ('delete' in result['object_scope']):
-                return jsonify(info=f"This file cannot be deleted"), 403
+                return jsonify(info=f"This file cannot be deleted by you"), 403
+            
             
             if not (access_token['sub'] in result['object_scope']):
                 return jsonify(info=f"You dont have permission to delete this bro"), 403
@@ -236,7 +257,35 @@ def update_blog():
 
         if result is None:
             return jsonify(info="Blog not found"),404
+        
         else:
+            # Check admin priv
+            if 'admin' in access_token['scopes'] and 'post' in result['object_scope']:
+                update_fields = {}
+                if title:
+                    update_fields['title'] = title
+                if content:
+                    update_fields['content'] = content
+                if author:
+                    update_fields['author'] = author
+
+                action_update = db_endpoint + "updateOne"
+                payload_update = json.dumps({
+                    "collection": "Blog",
+                    "database": "ATM",
+                    "dataSource": "ROSY",
+                    "filter": filter_find,
+                    "update": {"$set": update_fields}
+                })
+                r_update = requests.post(action_update, headers=header, data=payload_update)
+                result_update = json.loads(r_update.text)
+
+                if result_update.get('modifiedCount', 0) > 0:
+                    return jsonify(info="Blog updated Successfully"),200
+                else:
+                    return jsonify(info="Blog could not be updated"),500
+            
+            # Check normal priv
             if not ('post' in result['object_scope']):
                 return jsonify(info=f"This file cannot be updated"), 403
             
