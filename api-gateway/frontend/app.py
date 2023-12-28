@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 import os
 import requests
 from json import dumps, loads, dump
-from requestAPI import validate_user,submit_user,is_logged_in,delete_session,blog_up,blog_delete,blog_update,blog_read
+from requestAPI import validate_user,submit_user,is_logged_in,delete_session,blog_up,blog_delete,blog_update,blog_read,product_insert,product_delete,product_update
 
 load_dotenv()
 app = Flask(__name__)
@@ -141,6 +141,89 @@ def blog_page():
     except Exception as e:
         app.logger.error(f"Other Error:{e}")
         return redirect(url_for('login'))
+
+@app.route('/products', methods=['GET'])
+#@is_logged_in
+def products_page():
+    try:
+        is_logged = is_logged_in(request.cookies.get('session_id'))
+        app.logger.info(f'ISLOGGED: {is_logged}')
+        if is_logged:
+            return render_template('products.html', title="NetSec")
+        else:
+            raise Exception
+    except Exception as e:
+        app.logger.error(f"Other Error:{e}")
+        return redirect(url_for('login'))
+
+@app.route('/insert-product', methods=['POST'])
+#@is_logged_in
+def post_insert_product():
+    try:
+        is_logged = is_logged_in(request.cookies.get('session_id'))
+        app.logger.info(f'ISLOGGED: {is_logged}')
+        if is_logged:
+            product_id = request.form.get('id')
+            title = request.form.get('title')
+            price = request.form.get('price')
+            app.logger.warning(f"{product_id},{title},{price}")
+            check_response = product_insert(product_id,title,price)
+
+            if 'Success' in check_response['info']:
+                return render_template('products.html',announce=check_response['info'])
+            else:
+                return render_template('products.html',error=check_response['info'])
+        else:
+            raise Exception
+    except Exception as e:
+        app.logger.error(f"Other Error:{e}")
+        return redirect(url_for('products_page'))
+
+@app.route('/update-product', methods=['POST'])
+#@is_logged_in
+def post_update_product():
+    try:
+        is_logged = is_logged_in(request.cookies.get('session_id'))
+        app.logger.info(f'ISLOGGED: {is_logged}')
+        if is_logged:
+            product_id = request.form.get('updateId')
+            title = request.form.get('updateTitle')
+            price = request.form.get('updatePrice')
+            app.logger.warning(f"{product_id},{title},{price}")
+            check_response = product_update(product_id,title,price)
+
+            if 'Success' in check_response['info']:
+                return render_template('products.html',announce=check_response['info'])
+            else:
+                return render_template('products.html',error=check_response['info'])
+        else:
+            raise Exception
+    except Exception as e:
+        app.logger.error(f"Other Error:{e}")
+        return redirect(url_for('products_page'))
+    
+@app.route('/delete-product', methods=['POST'])
+#@is_logged_in
+def post_delete_product():
+    try:
+        is_logged = is_logged_in(request.cookies.get('session_id'))
+        app.logger.info(f'ISLOGGED: {is_logged}')
+        if is_logged:
+            product_id = request.form.get('deleteId')
+            app.logger.warning(f"{product_id}")
+            check_response = product_delete(product_id)
+
+            if 'Success' in check_response['info']:
+                return render_template('products.html',announce=check_response['info'])
+            else:
+                return render_template('products.html',error=check_response['info'])
+        else:
+            raise Exception
+    except Exception as e:
+        app.logger.error(f"Other Error:{e}")
+        return redirect(url_for('products_page'))
+    
+
     
 @app.route('/upload-blog', methods=['POST'])
 #@is_logged_in

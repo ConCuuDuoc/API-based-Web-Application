@@ -18,6 +18,8 @@ load_dotenv()
 AUTHEN_URL = os.getenv("AUTHEN_URL")
 AUTHO_URL = os.getenv("AUTHO_URL")
 BLOG_URL = os.getenv("BLOG_URL")
+PROD_URL = os.getenv("PROD_URL")
+
 
 def submit_user(email,password):
     data = {"email":email,"password":password}
@@ -36,6 +38,33 @@ def blog_up(blog_id,title,content,author):
     if session_id:
         data = {"blog_id":blog_id,"title":title,"content":content,"author":author}
         req = requests.post(BLOG_URL+"upload-blog",json=data,cookies={'session_id': session_id})
+        response = req.json()
+        return response
+    return False
+
+def product_insert(product_id,title,price):
+    session_id = request.cookies.get('session_id')
+    if session_id:
+        data = {"product_id":product_id,"title":title,"price":price}
+        req = requests.post(PROD_URL+"insert-product",json=data,cookies={'session_id': session_id})
+        response = req.json()
+        return response
+    return False
+
+def product_delete(product_id):
+    session_id = request.cookies.get('session_id')
+    if session_id:
+        data = {"product_id":product_id}
+        req = requests.post(PROD_URL+"delete-product",json=data,cookies={'session_id': session_id})
+        response = req.json()
+        return response
+    return False
+
+def product_update(product_id,title,price):
+    session_id = request.cookies.get('session_id')
+    if session_id:
+        data = {"product_id":product_id,"title":title,"price":price}
+        req = requests.post(PROD_URL+"update-product",json=data,cookies={'session_id': session_id})
         response = req.json()
         return response
     return False
