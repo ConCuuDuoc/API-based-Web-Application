@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blogservice
+  labels:
+    app: blogservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blogservice
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 3
+  template:
+    metadata:
+      labels:
+        app: blogservice
+    spec:
+      containers:
+        - name: blogservice
+          image: hazeldazel/blog:latest
+          imagePullPolicy: "Always"
+          ports:
+            - containerPort: 7777
+          envFrom:
+            - configMapRef:
+                name: blogservice-configmap
+            - secretRef:
+                name: blogservice-secret

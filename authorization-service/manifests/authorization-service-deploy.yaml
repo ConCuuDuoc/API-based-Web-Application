@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authorizationservice
+  labels:
+    app: authorizationservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: authorizationservice
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 3
+  template:
+    metadata:
+      labels:
+        app: authorizationservice
+    spec:
+      containers:
+        - name: authorizationservice
+          image: hazeldazel/author:latest
+          imagePullPolicy: "Always"
+          ports:
+            - containerPort: 5013
+          envFrom:
+            - configMapRef:
+                name: authorizationservice-configmap
+            - secretRef:
+                name: authorizationservice-secret
