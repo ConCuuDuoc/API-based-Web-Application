@@ -69,6 +69,15 @@ def product_update(product_id,title,price):
         return response
     return False
 
+def product_read(title):
+    session_id = request.cookies.get('session_id')
+    if session_id:
+        data = {"title":title}
+        req = requests.post(PROD_URL+"read-product",json=data,cookies={'session_id': session_id})
+        response = req.json()
+        return response
+    return False
+
 def blog_delete(blog_id):
     session_id = request.cookies.get('session_id')
     if session_id:
