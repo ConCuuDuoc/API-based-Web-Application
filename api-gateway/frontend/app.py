@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 import os
 import requests
 from json import dumps, loads, dump
-from requestAPI import validate_user,submit_user,is_logged_in,delete_session,blog_up,blog_delete,blog_update,blog_read,product_insert,product_delete,product_update
+from requestAPI import validate_user,submit_user,is_logged_in,delete_session,blog_up,blog_delete,blog_update,blog_read,product_insert,product_delete,product_update,product_read
 
 load_dotenv()
 app = Flask(__name__)
@@ -95,12 +95,12 @@ def register():
 @app.route('/dashboard',methods=["GET"])
 def get_dashboard():
     try:
-        is_logged = is_logged_in(request.cookies.get('session_id'))
-        app.logger.info(f'ISLOGGED: {is_logged}')
-        if is_logged:
-            return render_template("dashboard.html")
+        check_response = is_logged_in(request.cookies.get('session_id'),"get-email")
+        app.logger.info(f'ISLOGGED: {check_response}')
+        if 'logged' in check_response['info']:
+            return render_template('dashboard.html',email=check_response['email'])
         else:
-            raise Exception
+            return render_template('dashboard.html',email="Error")
     except Exception as e:
         app.logger.error(f"Other Error:{e}")
         return redirect(url_for('login'))
@@ -201,17 +201,17 @@ def post_update_product():
     except Exception as e:
         app.logger.error(f"Other Error:{e}")
         return redirect(url_for('products_page'))
-    
-@app.route('/delete-product', methods=['POST'])
+
+@app.route('/read-product', methods=['POST'])
 #@is_logged_in
-def post_delete_product():
+def post_read_product():
     try:
         is_logged = is_logged_in(request.cookies.get('session_id'))
         app.logger.info(f'ISLOGGED: {is_logged}')
         if is_logged:
-            product_id = request.form.get('deleteId')
-            app.logger.warning(f"{product_id}")
-            check_response = product_delete(product_id)
+            title = request.form.get('getByTitle')
+            app.logger.warning(f"{title}")
+            check_response = product_read(title)
 
             if 'Success' in check_response['info']:
                 return render_template('products.html',announce=check_response['info'])
@@ -223,7 +223,27 @@ def post_delete_product():
         app.logger.error(f"Other Error:{e}")
         return redirect(url_for('products_page'))
     
+@app.route('/delete-product', methods=['POST'])
+#@is_logged_in
+def post_delete_product():
+    try:
+        is_logged = is_logged_in(request.cookies.get('session_id'))
+        app.logger.info(f'ISLOGGED: {is_logged}')
+        if is_logged:
+            product_id = request.form.get('deleteId')
+            app.logger.warning(f"{product_id}")
+            check_response = product_read(product_id)
 
+            if 'Success' in check_response['info']:
+                return render_template('products.html',announce=check_response['info'])
+            else:
+                return render_template('products.html',error=check_response['info'])
+        else:
+            raise Exception
+    except Exception as e:
+        app.logger.error(f"Other Error:{e}")
+        return redirect(url_for('products_page'))
+    
     
 @app.route('/upload-blog', methods=['POST'])
 #@is_logged_in

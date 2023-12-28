@@ -221,52 +221,61 @@ def update_product():
     else:
          return jsonify(info=f"You dont have permission to update"),403
 
-@app.route('/api-product/get-product', methods=['POST'])
+@app.route('/api-product/read-product', methods=['POST'])
 def get_product_by_title():
-    request_data = request.get_json()
-    title = request_data.get('title')
-    if title is None:
-        return jsonify(data="Missing 'title' parameter in the request"), 400
+    session_id = request.cookies.get('session_id')
+    #app.logger.warning(session_id)
+    # Check if the session_id cookie was found
+    if session_id is None:
+        return jsonify({"info": "Session ID not found in cookies"}), 404
+    else:
+        # If the session_id cookie is not found, handle the absence accordingly
+        pass
+    #app.logger.warning(auth_service_url)
+    try:
+        response = requests.post(AUTHO_SERVER_URL+"get-scope",cookies={'session_id': session_id}).json()
+        #app.logger.info(response)
+        access_token =  response['access_token']
+        #app.logger.info(f"Log:{access_token}")
 
-    action_find = db_endpoint + "findOne"
-    filter_find = {"title": title}
-    payload_find = json.dumps({
-        "collection": "Products",
-        "database": "ATM",
-        "dataSource": "ROSY",
-        "filter": filter_find
-    })
-    r_find = requests.post(action_find, headers=header, data=payload_find)
-    response_data = json.loads(r_find.text)
-    
-    if isinstance(response_data, str):
-        # Handle the case where the response is a string (error message, not a document)
-        return jsonify(data=response_data), 404
+    except Exception as e:
+        return jsonify({"info": "Access token not found in cookies"}), 404
+    if ("read" in access_token['scopes']):
+        try:
+            request_data = request.get_json()
+        except  Exception as ex:
+            return jsonify(info='Request Body incorrect json format: ' + str(ex)),442
+        title = request_data.get('title')
+        if title is None:
+            return jsonify(info="Missing 'title' parameter in the request"), 400
 
-    result = response_data.get('document')
+        action_find = db_endpoint + "findOne"
+        filter_find = {"title": title}
+        payload_find = json.dumps({
+            "collection": "Products",
+            "database": "ATM",
+            "dataSource": "ROSY",
+            "filter": filter_find
+        })
+        r_find = requests.post(action_find, headers=header, data=payload_find)
+        response_data = json.loads(r_find.text)
+        
+        if isinstance(response_data, str):
+            # Handle the case where the response is a string (error message, not a document)
+            return jsonify(data=response_data), 404
 
-    if not result:
-        return jsonify(data="Product not found"), 404
+        result = response_data.get('document')
 
-    # If 'document' is a list, iterate over it
-    if isinstance(result, list):
-        products = []
-        for doc in result:
-            product_info = {
-                'id': doc.get('id'),
-                'title': doc.get('title'),
-                'price': doc.get('price')
-            }
-            products.append(product_info)
-        return jsonify(data=products), 200
+        if not result:
+            return jsonify(data="Product not found"), 404
 
-    # If 'document' is a single dictionary
-    product_info = {
-        'id': result.get('id'),
-        'title': result.get('title'),
-        'price': result.get('price')
-    }
-    return jsonify(data=product_info), 200
+        # If 'document' is a single dictionary
+        product_info = {
+            'id': result.get('id'),
+            'title': result.get('title'),
+            'price': result.get('price')
+        }
+        return jsonify(info=product_info), 200
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8888,debug=True)
