@@ -18,13 +18,13 @@ header = {
 
 #User: upload, update, delete 
 
-def is_duplicate_blog(id: str):
+def is_duplicate_blog(_id: str):
     action = db_endpoint + "findOne"
     payload = json.dumps({
         "collection": "Blog",
         "database": "ATM",
         "dataSource": "ROSY",
-        "filter": {"id": id}
+        "filter": {"id": _id}
     })
     r = requests.post(action, headers=header, data=payload)
     
@@ -133,8 +133,8 @@ def delete_blog():
 
     if ("delete" in access_token['scopes']):
         request_data = request.get_json()
-        id = request_data.get('blog_id')
-        if id is None:
+        _id = request_data.get('blog_id')
+        if _id is None:
             return jsonify(info="Missing 'blog_id' in the request data"),400
         
         first_action = db_endpoint+"findOne"
@@ -142,7 +142,7 @@ def delete_blog():
             "collection": "Blog",
             "database": "ATM",
             "dataSource": "ROSY",
-            "filter": {"id": id}
+            "filter": {"id": _id}
         })
         r = requests.post(first_action, headers=header, data=payload)
 #     # It's important to handle potential errors in the response here
@@ -162,7 +162,7 @@ def delete_blog():
                     "collection": "Blog",
                     "database": "ATM",
                     "dataSource": "ROSY",
-                    "filter": {"id": id}
+                    "filter": {"id": _id}
                 })
 
                 r = requests.post(action, headers=header, data=payload)
@@ -181,14 +181,14 @@ def delete_blog():
             if not (access_token['sub'] in result['object_scope']):
                 return jsonify(info=f"You dont have permission to delete this bro"), 403
         else:
-            return jsonify(info=f"You dont have permission to delete this bro"), 403
+            return jsonify(info=f"This blog id do not exist!"), 403
         
         action = db_endpoint + "deleteOne"
         payload = json.dumps({
             "collection": "Blog",
             "database": "ATM",
             "dataSource": "ROSY",
-            "filter": {"id": id}
+            "filter": {"id": _id}
         })
 
         r = requests.post(action, headers=header, data=payload)
@@ -232,17 +232,17 @@ def update_blog():
             else:
                 json_body.setdefault(key, value)
 
-        id = json_body.get('blog_id')
+        _id = json_body.get('blog_id')
         title = json_body.get('title')
         content = json_body.get('content')
         author = json_body.get('author')
 
-        if id is None:
+        if _id is None:
             return jsonify(info="Missing 'id' in the request data"),400
         
         
         action_find = db_endpoint + "findOne"
-        filter_find = {"id": id}
+        filter_find = {"id": _id}
         payload_find = json.dumps({
             "collection":"Blog",
             "database":"ATM",

@@ -228,10 +228,10 @@ def login():
     result = json.loads(r.text)['document']
     
     if(result == None):
-        return jsonify(data="User not existed"),442
+        return jsonify(info="User not existed"),442
     else:
         if(not check_password_hash(pwhash=result['password'],password=password)):
-            return jsonify(data="Password Incorrect"),403
+            return jsonify(info="Password Incorrect"),403
         else:
             #User is validated[]
 

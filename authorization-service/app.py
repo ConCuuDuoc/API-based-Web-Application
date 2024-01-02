@@ -224,7 +224,7 @@ def authorize():
     if email == ADMIN:
         scopes=['read','post','delete','admin']
     else:
-        scopes=['read','post','delete','user']
+        scopes=['read','post','delete']
 
     #up post do thang user -> post phai cho quyen [read, user_id_1]
     # Check if requested scope is included in user scope
