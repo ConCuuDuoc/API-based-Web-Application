@@ -1,6 +1,7 @@
-
+*secret.yaml
+*tls.yaml
 # Byte-compiled / optimized / DLL files
-
+cert/
 __pycache__/
 *.py[cod]
 *$py.class

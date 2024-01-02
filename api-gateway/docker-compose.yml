@@ -9,6 +9,7 @@ services:
       - 5015:5015
     volumes:
       - .:/api-gateway
+    image: meraviglioso8/gateway:latest
   nginx:
     restart: always
     build:
@@ -19,3 +20,4 @@ services:
       # - 443:443
     depends_on:
       - frontend-service
+    image: meraviglioso8/gateway:latest

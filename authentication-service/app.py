@@ -7,11 +7,10 @@ import requests
 from dotenv import load_dotenv
 import os
 import jwt
-import jwcrypto.jwk as jwk
 from datetime import datetime, timedelta
 from validator import SignupBodyValidation, LoginBodyValidation
 import requests
-from bson import ObjectId
+
 
 
 app = Flask(__name__)
