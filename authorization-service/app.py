@@ -222,9 +222,9 @@ def authorize():
     # Extract user ID    
     user_id = payload['id']
     if email == ADMIN:
-        scopes=['read','post','delete','admin']
+        scopes=['blog_manage','product_manage']
     else:
-        scopes=['read','post','delete']
+        scopes=['blog_read','blog_post','blog_delete','product_read']
 
     #up post do thang user -> post phai cho quyen [read, user_id_1]
     # Check if requested scope is included in user scope

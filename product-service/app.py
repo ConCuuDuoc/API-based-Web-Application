@@ -51,7 +51,7 @@ def insert_product():
 
     except Exception as e:
         return jsonify({"info": "Access token not found in cookies"}), 404
-    if ("post" and "admin" in access_token['scopes']):
+    if ("product_manage" in access_token['scopes']):
         try:
             json_req = request.get_json()
             app.logger.info(f"Log:{json_req}")
@@ -110,7 +110,7 @@ def delete_product():
     except Exception as e:
         return jsonify({"info": "Access token not found in cookies"}), 404
     
-    if ("delete" and "admin" in access_token['scopes']):
+    if ("product_manage" in access_token['scopes']):
         try:
             request_data = request.get_json()
             app.logger.info(f"Log:{request_data}")
@@ -159,7 +159,7 @@ def update_product():
 
     except Exception as e:
         return jsonify({"info": "Access token not found in cookies"}), 404
-    if ("post" and "admin" in access_token['scopes']):
+    if ("product_manage" in access_token['scopes']):
         try:
             json_req = request.get_json()
             app.logger.info(f"Log = :{json_req}")
@@ -240,7 +240,7 @@ def get_product_by_title():
 
     except Exception as e:
         return jsonify({"info": "Access token not found in cookies"}), 404
-    if ("read" in access_token['scopes']):
+    if ("product_read" or "product_manage" in access_token['scopes']):
         try:
             request_data = request.get_json()
         except  Exception as ex:

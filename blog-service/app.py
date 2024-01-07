@@ -54,7 +54,7 @@ def upload_blog():
 
     except Exception as e:
         return jsonify({"info": "Access token not found in cookies"}), 404
-    if ("post" in access_token['scopes']):
+    if ("blog_post" or "blog_manage" in access_token['scopes']):
         try:
             json_req = request.get_json()
             app.logger.info(json_req)
@@ -63,7 +63,7 @@ def upload_blog():
 
         # Get user_id from token (Sub - Subject = user_id)
         user_id = access_token['sub']
-        scopes = ['read','post','delete',user_id]
+        scopes = ['blog_read','blog_post','blog_delete',user_id]
         # Trim input body
         json_body = {}
         for key, value in json_req.items():
@@ -131,7 +131,7 @@ def delete_blog():
     access_token =  response['access_token']
     app.logger.info(f'User scope: {access_token}')
 
-    if ("delete" in access_token['scopes']):
+    if ("blog_delete" in access_token['scopes']):
         request_data = request.get_json()
         _id = request_data.get('blog_id')
         if _id is None:
@@ -155,7 +155,7 @@ def delete_blog():
         #app.logger.info(result['object_scope'])
         if result:
             # Check admin priv
-            if 'admin' in access_token['scopes'] and 'delete' in result['object_scope']:
+            if 'blog_manage' in access_token['scopes'] in result['object_scope']:
 
                 action = db_endpoint + "deleteOne"
                 payload = json.dumps({
@@ -174,7 +174,7 @@ def delete_blog():
                     return jsonify(info="Blog not found or could not be deleted"),404
             
             # Check normal user
-            if not ('delete' in result['object_scope']):
+            if not ('blog_delete' in result['object_scope']):
                 return jsonify(info=f"This file cannot be deleted by you"), 403
             
             
@@ -218,7 +218,7 @@ def update_blog():
     response = requests.post(AUTHO_SERVER_URL+"get-scope",cookies={'session_id': session_id}).json()
     access_token =  response['access_token']
 
-    if ("post" in access_token['scopes']):
+    if ("blog_post" in access_token['scopes']):
         try:
             json_req = request.get_json()
         except Exception as ex:
@@ -260,7 +260,7 @@ def update_blog():
         
         else:
             # Check admin priv
-            if 'admin' in access_token['scopes'] and 'post' in result['object_scope']:
+            if 'blog_manage' in access_token['scopes'] in result['object_scope']:
                 update_fields = {}
                 if title:
                     update_fields['title'] = title
@@ -286,7 +286,7 @@ def update_blog():
                     return jsonify(info="Blog could not be updated"),500
             
             # Check normal priv
-            if not ('post' in result['object_scope']):
+            if not ('blog_post' in result['object_scope']):
                 return jsonify(info=f"This file cannot be updated"), 403
             
             if not (access_token['sub'] in result['object_scope']):
@@ -334,7 +334,7 @@ def get_blog_by_title():
     # response = requests.post(auth_service_url,cookies={'session_id': session_id})
     response = requests.post(AUTHO_SERVER_URL+"get-scope",cookies={'session_id': session_id}).json()
     access_token =  response['access_token']
-    if ("read" in access_token['scopes']):
+    if ("blog_read" or "blog_manage" in access_token['scopes']):
 
         request_data = request.get_json()
         title = request_data.get('title')
