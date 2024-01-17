@@ -1,5 +1,5 @@
 # API-based-Web-Application
-NetSec project, dont upload the env file pls
+NetSec project, currently updating...
 ## How to use
 - In API gateway folder
 ```
