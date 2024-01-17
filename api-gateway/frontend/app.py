@@ -55,8 +55,8 @@ def login():
             
             return response
         except Exception as e:
-            app.logger.Error(f"An Exception occurred {e}")
-            redirect(url_for('login'))
+            app.logger.warning(f"An Exception occurred {e}")
+            return render_template('login.html', error=check_response['info'])
 
     # Render the login page for GET requests
     return render_template('login.html')
@@ -125,7 +125,16 @@ def logout():
 @app.route('/', methods=['GET'])
 #@is_logged_in
 def main_page():
-    return render_template('index.html', title="NetSec")
+    try:
+        check_response = is_logged_in(request.cookies.get('session_id'),"get-email")
+        app.logger.info(f'ISLOGGED: {check_response}')
+        if 'logged' in check_response['info']:
+            return render_template('dashboard.html',email=check_response['email'])
+        else:
+            return render_template('dashboard.html',email="Error")
+    except Exception as e:
+        return render_template('index.html')
+    
 
 @app.route('/blog', methods=['GET'])
 #@is_logged_in
@@ -232,7 +241,7 @@ def post_delete_product():
         if is_logged:
             product_id = request.form.get('deleteId')
             app.logger.warning(f"{product_id}")
-            check_response = product_read(product_id)
+            check_response = product_delete(product_id)
 
             if 'Success' in check_response['info']:
                 return render_template('products.html',announce=check_response['info'])

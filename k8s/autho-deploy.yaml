@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autho
+  labels:
+    app: autho
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: autho
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 3
+  template:
+    metadata:
+      labels:
+        app: autho
+    spec:
+      containers:
+        - name: autho
+          image: meraviglioso8/autho:latest
+          ports:
+            - name: autho
+              containerPort: 5013
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: autho-configmap
+            - secretRef:
+                name: autho-secret

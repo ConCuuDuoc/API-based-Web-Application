@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authen
+  labels:
+    app: authen
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: authen
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 3
+  template:
+    metadata:
+      labels:
+        app: authen
+    spec:
+      containers:
+        - name: authen
+          image: meraviglioso8/authen:latest
+          ports:
+            - name: authen
+              containerPort: 5012
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: authen-configmap
+            - secretRef:
+                name: authen-secret
