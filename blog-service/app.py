@@ -129,9 +129,9 @@ def delete_blog():
     # response = requests.post(auth_service_url,cookies={'session_id': session_id})
     response = requests.post(AUTHO_SERVER_URL+"get-scope",cookies={'session_id': session_id}).json()
     access_token =  response['access_token']
-    app.logger.info(f'User scope: {access_token}')
+    app.logger.warning(f'User scope: {access_token}')
 
-    if ("blog_delete" in access_token['scopes']):
+    if ("blog_delete" or "blog_manage" in access_token['scopes']):
         request_data = request.get_json()
         _id = request_data.get('blog_id')
         if _id is None:
@@ -155,7 +155,7 @@ def delete_blog():
         #app.logger.info(result['object_scope'])
         if result:
             # Check admin priv
-            if 'blog_manage' in access_token['scopes'] in result['object_scope']:
+            if 'blog_manage' in access_token['scopes']:
 
                 action = db_endpoint + "deleteOne"
                 payload = json.dumps({
@@ -218,7 +218,7 @@ def update_blog():
     response = requests.post(AUTHO_SERVER_URL+"get-scope",cookies={'session_id': session_id}).json()
     access_token =  response['access_token']
 
-    if ("blog_post" in access_token['scopes']):
+    if ("blog_post" or "blog_manage" in access_token['scopes']):
         try:
             json_req = request.get_json()
         except Exception as ex:
@@ -260,7 +260,7 @@ def update_blog():
         
         else:
             # Check admin priv
-            if 'blog_manage' in access_token['scopes'] in result['object_scope']:
+            if 'blog_manage' in access_token['scopes']:
                 update_fields = {}
                 if title:
                     update_fields['title'] = title
